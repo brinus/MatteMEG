@@ -1,12 +1,19 @@
 #include "../include/PatchHeader.hpp"
 
+int RunHeader::nIstances_ = 0;
+
 RunHeader::RunHeader(const int & idStart, const int & idStop)
 {
+   std::ostringstream ss;
+   ss << std::setw(2) << std::setfill('0') << nIstances_;
+   histName_ = "h" + ss.str(); 
+
+   nIstances++;
    (*this).AddRange(idStart, idStop);
    return;
 }
 
-const RunHeader & RunHeader::AddRange(const int & idStart, const int & idStop)
+RunHeader &RunHeader::AddRange(const int & idStart, const int & idStop)
 {
    int last3Start = idStart % 1000;
    int lats3Stop = idStop % 1000;
@@ -19,7 +26,7 @@ const RunHeader & RunHeader::AddRange(const int & idStart, const int & idStop)
    {
       for (int idFolder = folderStart; idFolder <= folderStop; idFolder++)
       {
-         std::string folderData = DATA_PATH + std::to_string(folderStart) + "xxx/";
+         std::string folderData = DATA_PATH + std::to_string(idFolder) + "xxx/";
          if (folderStart == folderStop)
          {
             loopFrom = idStart;
@@ -37,9 +44,23 @@ const RunHeader & RunHeader::AddRange(const int & idStart, const int & idStop)
          }
          else // folderStart < idFolder < folderStop
          {
-            
+            loopFrom = idFolder * 1000;
+            loopTo = idFolder * 1000 + 999;            
+         }
+
+         for (int idRun = loopFrom; idRun <= loopTo; idRun++)
+         {
+            std::string fileName = "rec" + std::to_string(idRun) + ".root";
+            fileName_.push_back(folderData + fileName);
          }
       }
    }
-   else 
+   else
+   {
+      std::cout << "ERROR" std::endl;
+      std::cout << "Wrong IDs: " << idStart << " " << idStop << std::endl;
+      exit(0);
+   }
+   return *this;
+
 }
