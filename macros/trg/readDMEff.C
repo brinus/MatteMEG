@@ -3,7 +3,7 @@
 
 void readDMEff()
 {
-    TFile * DMFile = new TFile("/meg/home/brini_m/Git/offline/analyzer/outDMEfficiency.root", "READ");
+    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/outDMEfficiency.root", "READ");
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");
     TH1F * hEPosTRG = (TH1F *)DMFile->Get("hEPosTRG");

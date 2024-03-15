@@ -12,6 +12,8 @@
 //      offline reconstruction of the pixel ID, the latter is the logic OR
 //      between all the TRG pixel ID in the wanted clock time (as function
 //      of runnumber). 
+//      The user can set two flags: isROOTFileOn and isPlotOn. The defalut  
+//      values are respectively 0 and 1.
 
 Bool_t DMTable[256][512];
 
@@ -21,7 +23,7 @@ Bool_t isHitValid(Int_t, Float_t);
 Bool_t isOrTRG(Int_t, vector<Int_t> &);
 void loadDMTable(const char *);
 
-void DMEfficiency_v0_2()
+void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
     const Bool_t kVerbose = false;
@@ -152,10 +154,10 @@ void DMEfficiency_v0_2()
         {
             MEGGLBPositron * positron =  (MEGGLBPositron *)GLBPositronRA->At(RecDataRV->GetPositronIndexAt(iPositron));
             
-            // RecData positron 
+            // RecData positron pixelId
             Int_t pixelIdReco = positron->GetMatchedPixelID();
             
-            // Gamma reconstruction from positron
+            // Positron initial values infos
             Double_t xpos, ypos, zpos, phipos, thetapos, epos;
             xpos = RecDataRV->GetXPositronAt(iPositron);
             ypos = RecDataRV->GetYPositronAt(iPositron);
@@ -164,6 +166,16 @@ void DMEfficiency_v0_2()
             thetapos = RecDataRV->GetThetaPositronAt(iPositron);
             epos = RecDataRV->GetEPositronAt(iPositron);
 
+            // Quality cuts -------------------------------------
+            bool ePosCut = epos < 0.040 || epos > 0.053;
+            bool posXECAcceptance = positron->GetXECAcceptance();
+            bool posNGoodhits = positron->Getngoodhits() > 45;
+
+            if (ePosCut || !posXECAcceptance)
+                continue;
+            // -------------------------------------------------- 
+            
+            // Gamma patch position reconstruction
             Double_t gammatheta = 180. - thetapos;
             Double_t gammaphi = phipos + 180.;
 
@@ -212,13 +224,6 @@ void DMEfficiency_v0_2()
             MEGXECPMRunHeader * pmrunh =(MEGXECPMRunHeader *)XECPMRunHeaderRA->At(uID + vID * 44);
             Int_t patchId = GetPatch(pmrunh);
 
-            // Quality cuts
-            bool ePosCut = epos < 0.040 || epos > 0.053;
-            bool posXECAcceptance = positron->GetXECAcceptance();
-            bool posNGoodhits = positron->Getngoodhits() > 45;
-
-            if (ePosCut || !posXECAcceptance)
-                continue;
            
             // Check if pixelIdReco is in postmark
             bool isRecoInPostStamp = false;
@@ -260,11 +265,9 @@ void DMEfficiency_v0_2()
     cout << endl;
 
     // Plots
-    const Bool_t isROOTFileOn = false;
-    const Bool_t isPlotOn = true;
     if (isROOTFileOn)
     {
-        TFile outFile("outDMEfficiency.root", "RECREATE");  
+        TFile outFile("/meg/home/brini_m/Git/MatteMEG/outfiles/outDMEfficiency.root", "RECREATE");  
         hEPos->Write();
         hEPosReco->Write();
         hEPosTRG->Write(); 
