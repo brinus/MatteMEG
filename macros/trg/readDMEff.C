@@ -1,5 +1,14 @@
-// --- readDMEff.C ---
-//
+// --- readDMEff.C -------------------------------------------------------------o
+//                                                                              |
+// Version:     0.1                                                             |
+// Author:      Matteo Brini                                                    |
+// Date:        15/03/2024                                                      |
+// E-mail:      brinimatteo@gmail.com                                           |
+//                                                                              |    
+// Macro to read output file of macros/trg/DMEfficiency.C. This macro generates |
+// the efficiency plots for direction match.                                    |
+//                                                                              |
+// -----------------------------------------------------------------------------o
 
 void readDMEff()
 {

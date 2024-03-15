@@ -1,19 +1,20 @@
-// --- DMEfficiency.C ---
-//
-// Version:     0.2
-// Author:      Matteo Brini
-// Date:        14/03/2024
-// E-mail:      brinimatteo@gmail.com
-//              
-// Description:
-//      Computation of trigger efficiency for direction match.
-//      This version implement the computation of efficiency based on two
-//      discriminants: the former is the entry of the DM table given by the 
-//      offline reconstruction of the pixel ID, the latter is the logic OR
-//      between all the TRG pixel ID in the wanted clock time (as function
-//      of runnumber). 
-//      The user can set two flags: isROOTFileOn and isPlotOn. The defalut  
-//      values are respectively 0 and 1.
+// --- DMEfficiency.C ----------------------------------------------------------o
+//                                                                              |
+// Version:     0.2                                                             |
+// Author:      Matteo Brini                                                    |
+// Date:        14/03/2024                                                      |
+// E-mail:      brinimatteo@gmail.com                                           |
+//                                                                              |
+// Description:                                                                 |
+//      Computation of trigger efficiency for direction match. This version     |
+//      implements the computation of efficiency based on two discriminants:    |
+//      the former is the entry of the DM table given by the offline            | 
+//      reconstruction of the pixel ID, the latter is the logic OR between all  |
+//      the TRG pixel ID in the wanted clock time (as function of runnumber).   |
+//      The user can set two flags: isROOTFileOn and isPlotOn. The defalut      | 
+//      values are respectively 0 and 1.                                        |
+//                                                                              |
+//------------------------------------------------------------------------------o
 
 Bool_t DMTable[256][512];
 
