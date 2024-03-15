@@ -34,7 +34,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     TChain * rec = new TChain("rec");
 
     Int_t runNum = 393500;
-    Int_t nInFiles = 1200;
+    Int_t nInFiles = 2000;
     Int_t nFiles = 0;
     Int_t nEntries = 0;
 

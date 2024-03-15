@@ -23,18 +23,19 @@ void readDMEff()
     c->cd(1);
     hEPos->GetXaxis()->SetTitle("Positron Energy [MeV]");
     hEPos->GetYaxis()->SetTitle("Events");
+    hEPos->GetXaxis()->SetRangeUser(40, 55);
     hEPos->Draw();
     hEPosReco->SetLineColor(kRed);
     hEPosReco->Draw("SAME");
     hEPosTRG->SetLineColor(kBlue);
     hEPosTRG->Draw("SAME");
+    c->BuildLegend();
 
-    c->cd(2); 
+    c->cd(2);
     TEfficiency *effReco = new TEfficiency(*hEPosReco, *hEPos);
     TEfficiency *effTRG  = new TEfficiency(*hEPosTRG, *hEPos);
    
-    effReco->SetTitle(";;Efficiency");
-
+    effReco->SetTitle(";Positron Energy [MeV];Efficiency");
     effReco->SetLineColor(kRed);
     effReco->Draw();
     effTRG->SetLineColor(kBlue);
