@@ -13,6 +13,8 @@
 
 using namespace std;
 
+Bool_t DMTable[256][512];
+
 bool isCoarseValid(Int_t runnum, Int_t coarse)
 {
     if (runnum < 393800)
@@ -31,7 +33,43 @@ bool isHitValid(Int_t runnum, Float_t hit)
         return hit >= -0.65e-6 && hit <= -0.61e-6;
 }
 
-void ShowEvent(Int_t runnum, Int_t eventNum, bool narrow=true){
+void loadDMTable(const char* path)
+{
+    FILE *tabin = fopen(path,"r");
+    Int_t data;
+
+    for(Int_t iTile = 0; iTile<512; iTile++)
+    {
+        for(Int_t iPatch = 0; iPatch<256; iPatch++)
+        {
+            fscanf(tabin,"%d",&data);
+            if(data)
+                DMTable[iPatch][iTile] = true;
+            else
+                DMTable[iPatch][iTile] = false;
+        }
+    }
+}
+
+void ShowEvent(Int_t runnum = -1, Int_t eventNum = -1, Int_t patchId = -1)
+{
+    if (runnum == -1 || eventNum == -1)
+    {
+        cout << "Please select a runnumber and an eventNum!" << endl;
+        return;
+    }
+
+    if (patchId < -1 || patchId >= 256)
+    {
+        cout << "Invalid patchId passed: " << patchId << endl;
+        return;
+    }
+    else
+    {
+        loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+        //loadDMTable("/meg/home/brini_m/Git/offline/analyzer/dmout.mem");
+    }
+
     TFile * f = new TFile(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", runnum/1000, runnum));
     //TFile * f = new TFile(Form("/meg/data1/offline/run/%03dxxx/rec%06d_open.root", runnum/1000, runnum));
     //TFile * f = new TFile(Form("/meg/data1/offline/run/%03dxxx/rec%06d_check.root", runnum/1000, runnum));
@@ -89,10 +127,12 @@ void ShowEvent(Int_t runnum, Int_t eventNum, bool narrow=true){
     Int_t tctoOdb = trgRunHeader->GetTcTimeOffset();
     cout << "---------------------------------------------" << endl;
     cout << "Event infos: " << endl;
-    cout << "   Run: " << runnumber << endl;
-    cout << "   Event: " << eventNum
+    cout << "   Run: " << runnum << endl;
+    cout << "   Event: " << eventNum << endl;
     cout << "   Trigger ID: " << triggerId << endl;
     cout << "   Trigger mask: " << triggerMask << endl;
+    if (patchId != -1)
+        cout << "   Patch ID: " << patchId << endl;
 
     TCanvas* cSPX = new TCanvas("cSPX", "cSPX", 1000, 500);
     TVirtualPad * pad = cSPX->cd();
@@ -128,10 +168,23 @@ void ShowEvent(Int_t runnum, Int_t eventNum, bool narrow=true){
         if (isHitValid(runnum, time))
         {
             cout << " isValid";
-            pixelSet[pixelid][0] = kGreen;
+            if (patchId == -1)
+                pixelSet[pixelid][0] = kGreen;
         }
         cout << endl;
     }
+    
+    // DMTable
+    if (patchId != -1)
+    {
+
+        for (Int_t iPixel = 0; iPixel < 512; ++iPixel)
+        {
+            if (DMTable[patchId][iPixel])
+                pixelSet[iPixel][0] = kYellow;
+        }
+    }
+
     cout << "---------------------------------------------" << endl;
     cout << "Reco Positron" << endl;
     Int_t nPositron = RecDataRV->GetNPositron();
