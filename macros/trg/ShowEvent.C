@@ -181,7 +181,9 @@ void ShowEvent(Int_t runnum = -1, Int_t eventNum = -1, Int_t patchId = -1)
         for (Int_t iPixel = 0; iPixel < 512; ++iPixel)
         {
             if (DMTable[patchId][iPixel])
+            {
                 pixelSet[iPixel][0] = kYellow;
+            }
         }
     }
 
@@ -199,7 +201,9 @@ void ShowEvent(Int_t runnum = -1, Int_t eventNum = -1, Int_t patchId = -1)
         cout << "Positron " << iPos + 1 << "/" << nPositron << endl;
         cout << "\tPixelID: " << pixelid << endl;      
         if (isHitValid(runnum, time))
+        {
             pixelSet[pixelid][0] = kBlue;
+        }
     }
 
     MEGDiscrWaveform * trackHitWaveform[4];
@@ -227,7 +231,9 @@ void ShowEvent(Int_t runnum = -1, Int_t eventNum = -1, Int_t patchId = -1)
                      << ", TileTime " << setw(2) << tileTime 
                      << ": " << setw(7) << tileTime_ns << " ns" << endl;
                 if (isCoarseValid(runnum , i))
+                {
                     pixelSet[trackTileIdWaveform[iTrack]->GetAmplitudeAt(i)].push_back(kRed);
+                }
             }
         }
     }

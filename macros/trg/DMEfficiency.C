@@ -27,7 +27,9 @@ void loadDMTable(const char *);
 void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
-    const Bool_t kVerbose = false;
+    ROOT::EnableImplicitMT();
+    const Bool_t kVerbose = true;
+    Int_t show = 10;
     loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
     //loadDMTable("/meg/home/brini_m/Documents/run24/dm_fullMC_001.mem");
 
@@ -35,12 +37,12 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     TChain * rec = new TChain("rec");
 
     Int_t runNum = 393500;
-    Int_t nInFiles = 10000;
+    Int_t nInFiles = 100;
     Int_t endFile = 427120; 
     Int_t nFiles = 0;
     Int_t nEntries = 0;
 
-    for (Int_t iFile = runNum; iFile < endFile; ++iFile)
+    for (Int_t iFile = runNum; iFile < runNum + nInFiles; ++iFile)
         nFiles += rec->Add(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", iFile / 1000, iFile));
 
     nEntries = rec->GetEntries();
@@ -87,7 +89,6 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
         printf(" - V [%f, %f]\n", vMin, vMax);
     }
 
-
     // TChain SETUP
     ROMETreeInfo    * InfoRV = 0;
     MEGEventHeader  * EventHeaderRV = 0;
@@ -129,6 +130,10 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     TH1F * hNHitsReco = new TH1F("hNHitsReco", "hNHitsReco", 20, -0.5, 19.5);
     TH1F * hNHitsTRG  = new TH1F("hNHitsTRG", "hNHitsTRG", 20, -0.5, 19.5);
     
+    TH1F * hEPosHits     = new TH1F("hEPosHits", "", 120, 40, 56);
+    TH1F * hEPosHitsReco = new TH1F("hEPosHitsReco", "", 120, 40, 56);
+    TH1F * hEPosHitsTRG  = new TH1F("hEPosHitsTRG", "", 120, 40, 56);
+    
     // TChain LOOP
     for (Int_t iEntry = 0; iEntry < nEntries; ++iEntry)
     {
@@ -138,7 +143,6 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 
         auto run = InfoRV->GetRunNumber();
         auto event = InfoRV->GetEventNumber();
-
 
         auto mask = EventHeaderRV->Getmask();
         if (mask!=21) continue;
@@ -184,7 +188,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 
             // Quality cuts -------------------------------------
             bool ePosCut = epos < 0.040 || epos > 0.053;
-            bool ePosCutFine = epos < 0.052 || epos > 0.053;
+            bool ePosCutFine = epos < 0.05265 || epos > 0.05295;
             bool posXECAcceptance = positron->GetXECAcceptance();
             bool posNGoodhits = positron->Getngoodhits() > 45;
 
@@ -258,14 +262,20 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             if(goodPatchId && goodPixelId && isRecoInPostStamp)
             {
                 hEPos->Fill(epos * 1000);
-                hTarget->Fill(xpos, ypos);
-                hPixelReco->Fill(pixelIdReco % 16, pixelIdReco / 16);
-                if (vecpixelIdTRG.size() != 0)
-                    hPixelTRG->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
+                if (vecpixelIdSPX.size() > 1)
+                    hEPosHits->Fill(epos * 1000);
+                if (!ePosCutFine)
+                {
+                    hTarget->Fill(xpos, ypos);
+                    hPixelReco->Fill(pixelIdReco % 16, pixelIdReco / 16);
+                    if (vecpixelIdTRG.size() != 0)
+                        hPixelTRG->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
+                    hNHits->Fill(vecpixelIdSPX.size());
+                }
 
-                hNHits->Fill(vecpixelIdSPX.size());
-
-                if (kVerbose && !isOrTRG(patchId, vecpixelIdTRG) && !ePosCutFine)
+                bool print00 = kVerbose && !isOrTRG(patchId, vecpixelIdTRG) && !ePosCutFine;
+                bool print01 = nPositrons > 1;
+                if (print01)
                 {
                     cout << "--------------------------------" << endl;
                     cout << "Run/evt: " << run << "/" << event << endl;
@@ -279,20 +289,34 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
                 if (DMTable[patchId][pixelIdReco])
                 {
                     hEPosReco->Fill(epos * 1000);
-                    hTargetReco->Fill(xpos, ypos);
-                    hPixelRecoGood->Fill(pixelIdReco % 16, pixelIdReco / 16);
-                
-                    hNHitsReco->Fill(vecpixelIdSPX.size());
+                    if (vecpixelIdSPX.size() > 1)
+                        hEPosHitsReco->Fill(epos * 1000);
+                    if (!ePosCutFine)
+                    {
+                        hTargetReco->Fill(xpos, ypos);
+                        hPixelRecoGood->Fill(pixelIdReco % 16, pixelIdReco / 16);
+                        hNHitsReco->Fill(vecpixelIdSPX.size());
+                    }
                 }
 
                 if (isOrTRG(patchId, vecpixelIdTRG))
                 {
+                    if (show)
+                    {
+                        cout << "evt buono: " << run << " " << event << endl;
+                        cout << "patch " << patchId << endl;
+                        show--;
+                    }
                     hEPosTRG->Fill(epos * 1000);   
-                    hTargetTRG->Fill(xpos, ypos);
-                    if (vecpixelIdTRG.size() != 0)
-                        hPixelTRGGood->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
-                    
-                    hNHitsTRG->Fill(vecpixelIdSPX.size());
+                    if (vecpixelIdSPX.size() > 1)
+                        hEPosHitsTRG->Fill(epos * 1000);
+                    if (!ePosCutFine)
+                    {
+                        hTargetTRG->Fill(xpos, ypos);
+                        if (vecpixelIdTRG.size() != 0)
+                            hPixelTRGGood->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
+                        hNHitsTRG->Fill(vecpixelIdSPX.size());
+                    }
                 }
             }
         }
@@ -302,7 +326,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     // Plots
     if (isROOTFileOn)
     {
-        TFile outFile("/meg/home/brini_m/Git/MatteMEG/outfiles/outDMEfficiency_001.root", "RECREATE");  
+        TFile outFile("/meg/home/brini_m/Git/MatteMEG/outfiles/outDMEfficiency_002.root", "RECREATE");  
         hEPos->Write();
         hEPosReco->Write();
         hEPosTRG->Write(); 
@@ -317,6 +341,16 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
         hPixelRecoGood->Write();
         hPixelTRG->Write();
         hPixelTRGGood->Write();
+
+        // nHits
+        hNHits->Write();
+        hNHitsReco->Write();
+        hNHitsTRG->Write();
+
+        // EPosHits
+        hEPosHits->Write();
+        hEPosHitsReco->Write();
+        hEPosHitsTRG->Write();
     }
 
     if (!isPlotOn)
@@ -398,6 +432,26 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     effNHitsTRG->SetLineColor(kBlue);
     effNHitsReco->Draw();
     effNHitsTRG->Draw("SAME");
+
+    // EPos for nHits > 1
+    TCanvas * cEPosHits = new TCanvas("cEPosHits", "cEPosHits", 1);
+    cEPosHits->Divide(1, 2);
+
+    cEPosHits->cd(1);
+    hEPosHits->Draw();
+    hEPosHitsReco->SetLineColor(kRed);
+    hEPosHitsTRG->SetLineColor(kBlue);
+    hEPosHitsReco->Draw("SAME");
+    hEPosHitsTRG->Draw("SAME");
+
+    cEPosHits->cd(2);
+    TEfficiency * effEPosHitsReco = new TEfficiency(*hEPosHitsReco, *hEPosHits);
+    TEfficiency * effEPosHitsTRG = new TEfficiency(*hEPosHitsTRG, *hEPosHits);
+    effEPosHitsReco->SetLineColor(kRed);
+    effEPosHitsTRG->SetLineColor(kBlue);
+    effEPosHitsReco->Draw();
+    effEPosHitsTRG->Draw("SAME");
+
 }
 
 Int_t GetPatch(MEGXECPMRunHeader * pm)
