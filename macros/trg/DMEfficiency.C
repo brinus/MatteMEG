@@ -27,9 +27,8 @@ void loadDMTable(const char *);
 void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
-    ROOT::EnableImplicitMT();
-    const Bool_t kVerbose = true;
-    Int_t show = 10;
+    const Bool_t kVerbose = false;
+    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
     loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
     //loadDMTable("/meg/home/brini_m/Documents/run24/dm_fullMC_001.mem");
 
@@ -37,13 +36,14 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     TChain * rec = new TChain("rec");
 
     Int_t runNum = 393500;
-    Int_t nInFiles = 100;
+    Int_t nInFiles = 1000;
     Int_t endFile = 427120; 
     Int_t nFiles = 0;
     Int_t nEntries = 0;
 
-    for (Int_t iFile = runNum; iFile < runNum + nInFiles; ++iFile)
-        nFiles += rec->Add(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", iFile / 1000, iFile));
+    //for (Int_t iFile = runNum; iFile < runNum + nInFiles; ++iFile)
+    //    nFiles += rec->Add(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", iFile / 1000, iFile));
+    nFiles += rec->Add("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21/*.root");
 
     nEntries = rec->GetEntries();
     cout << "Got " << nFiles << " files" << endl;
@@ -126,6 +126,14 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     TH2F * hTargetReco = new TH2F("hTargetReco", "hTargetReco", 20, -5, 5, 20, -5, 5);
     TH2F * hTargetTRG  = new TH2F("hTargetTRG", "hTargetTRG", 20, -5, 5, 20, -5, 5);
 
+    TH2F * hZY     = new TH2F("hZY", "hZY", 80, -20, 20, 20, -5, 5);
+    TH2F * hZYReco = new TH2F("hZYReco", "hZYReco", 80, -20, 20, 20, -5, 5);
+    TH2F * hZYTRG  = new TH2F("hZYTRG", "hZYTRG", 80, -20, 20, 20, -5, 5);
+
+    TH2F * hZTheta = new TH2F("hZTheta", "hZTheta", 80, -20, 20, 100, 60, 120);
+    TH2F * hZThetaReco = new TH2F("hZThetaReco", "hZThetaReco", 80, -20, 20, 100, 60, 120);
+    TH2F * hZThetaTRG = new TH2F("hZThetaTRG", "hZThetaTRG", 80, -20, 20, 100, 60, 120);
+
     TH1F * hNHits     = new TH1F("hNHits", "hNHits", 20, -0.5, 19.5);
     TH1F * hNHitsReco = new TH1F("hNHitsReco", "hNHitsReco", 20, -0.5, 19.5);
     TH1F * hNHitsTRG  = new TH1F("hNHitsTRG", "hNHitsTRG", 20, -0.5, 19.5);
@@ -133,7 +141,15 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     TH1F * hEPosHits     = new TH1F("hEPosHits", "", 120, 40, 56);
     TH1F * hEPosHitsReco = new TH1F("hEPosHitsReco", "", 120, 40, 56);
     TH1F * hEPosHitsTRG  = new TH1F("hEPosHitsTRG", "", 120, 40, 56);
-    
+
+    TH1F * hTheta     = new TH1F("hTheta", "hTheta", 100, 60, 120);
+    TH1F * hThetaReco = new TH1F("hThetaReco", "hThetaReco", 100, 60, 120);
+    TH1F * hThetaTRG  = new TH1F("hThetaTRG", "hThetaTRG", 100, 60, 120);
+
+    TH1F * hPhi = new TH1F("hPhi", "hPhi", 100, -70, 70);
+    TH1F * hPhiReco = new TH1F("hPhiReco", "hPhiReco", 100, -70, 70);
+    TH1F * hPhiTRG = new TH1F("hPhiTRG", "hPhiTRG", 100, -70, 70);
+
     // TChain LOOP
     for (Int_t iEntry = 0; iEntry < nEntries; ++iEntry)
     {
@@ -157,6 +173,8 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             if (isCoarseValid(run, coarse))
                 vecpixelIdTRG.push_back(pixelIdTRG);
         }
+        if (vecpixelIdTRG.size() == 0)
+            continue;
 
         // SPXHits LOOP
         vector<Int_t> vecpixelIdSPX = {};
@@ -168,6 +186,9 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             if (isHitValid(run, time))
                 vecpixelIdSPX.push_back(pixelIdSPX);
         }
+        if (vecpixelIdSPX.size() == 0)
+            continue;
+        
         // RecData LOOP
         auto nPositrons = RecDataRV->GetNPositron();
         for (Int_t iPositron = 0; iPositron < nPositrons; iPositron++) 
@@ -245,7 +266,6 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             MEGXECPMRunHeader * pmrunh =(MEGXECPMRunHeader *)XECPMRunHeaderRA->At(uID + vID * 44);
             Int_t patchId = GetPatch(pmrunh);
 
-
             // Check if pixelIdReco is in postmark
             bool isRecoInPostStamp = false;
             for (auto & pixelIdSPX : vecpixelIdSPX)
@@ -267,15 +287,18 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
                 if (!ePosCutFine)
                 {
                     hTarget->Fill(xpos, ypos);
+                    hZY->Fill(zpos, ypos);
+                    hZTheta->Fill(zpos, thetapos);
                     hPixelReco->Fill(pixelIdReco % 16, pixelIdReco / 16);
-                    if (vecpixelIdTRG.size() != 0)
-                        hPixelTRG->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
+                    hPixelTRG->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
                     hNHits->Fill(vecpixelIdSPX.size());
+                    hTheta->Fill(thetapos);
+                    hPhi->Fill(phipos);
                 }
 
-                bool print00 = kVerbose && !isOrTRG(patchId, vecpixelIdTRG) && !ePosCutFine;
+                bool print00 = !isOrTRG(patchId, vecpixelIdTRG) && !ePosCutFine;
                 bool print01 = nPositrons > 1;
-                if (print01)
+                if (kVerbose && print00)
                 {
                     cout << "--------------------------------" << endl;
                     cout << "Run/evt: " << run << "/" << event << endl;
@@ -294,28 +317,29 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
                     if (!ePosCutFine)
                     {
                         hTargetReco->Fill(xpos, ypos);
+                        hZYReco->Fill(zpos, ypos);
+                        hZThetaReco->Fill(zpos, thetapos);
                         hPixelRecoGood->Fill(pixelIdReco % 16, pixelIdReco / 16);
                         hNHitsReco->Fill(vecpixelIdSPX.size());
+                        hThetaReco->Fill(thetapos);
+                        hPhiReco->Fill(phipos);
                     }
                 }
 
                 if (isOrTRG(patchId, vecpixelIdTRG))
                 {
-                    if (show)
-                    {
-                        cout << "evt buono: " << run << " " << event << endl;
-                        cout << "patch " << patchId << endl;
-                        show--;
-                    }
                     hEPosTRG->Fill(epos * 1000);   
                     if (vecpixelIdSPX.size() > 1)
                         hEPosHitsTRG->Fill(epos * 1000);
                     if (!ePosCutFine)
                     {
                         hTargetTRG->Fill(xpos, ypos);
-                        if (vecpixelIdTRG.size() != 0)
-                            hPixelTRGGood->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
+                        hZYTRG->Fill(zpos, ypos);
+                        hZThetaTRG->Fill(zpos, thetapos);
+                        hPixelTRGGood->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
                         hNHitsTRG->Fill(vecpixelIdSPX.size());
+                        hThetaTRG->Fill(thetapos);
+                        hPhiTRG->Fill(phipos);
                     }
                 }
             }
@@ -326,7 +350,9 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     // Plots
     if (isROOTFileOn)
     {
-        TFile outFile("/meg/home/brini_m/Git/MatteMEG/outfiles/outDMEfficiency_002.root", "RECREATE");  
+        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_nar001.root";
+        cout << "Writing to " << outPath << endl;
+        TFile outFile(outPath, "RECREATE");  
         hEPos->Write();
         hEPosReco->Write();
         hEPosTRG->Write(); 
@@ -335,6 +361,16 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
         hTarget->Write();
         hTargetReco->Write();
         hTargetTRG->Write();
+
+        // Z vs Y
+        hZY->Write();
+        hZYReco->Write();
+        hZYTRG->Write();
+
+        // Z vs Theta
+        hZTheta->Write();
+        hZThetaReco->Write();
+        hZThetaTRG->Write();
 
         // Pixel
         hPixelReco->Write();
@@ -351,6 +387,16 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
         hEPosHits->Write();
         hEPosHitsReco->Write();
         hEPosHitsTRG->Write();
+    
+        // Theta
+        hTheta->Write();
+        hThetaReco->Write();
+        hThetaTRG->Write();
+
+        // Phi
+        hPhi->Write();
+        hPhiReco->Write();
+        hPhiTRG->Write();
     }
 
     if (!isPlotOn)
@@ -396,6 +442,40 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     cTarget->cd(2);
     gPad->SetRightMargin(0.15);
     hTargetTRGRatio->Draw("COLZ");
+
+    // Z vs Y
+    TCanvas * cZY = new TCanvas("cZY", "cZY", 1000, 500);
+    cZY->Divide(2, 1);
+
+    TH2F * hZYRecoRatio = new TH2F(*hZYReco);
+    TH2F * hZYTRGRatio = new TH2F(*hZYTRG);
+    hZYRecoRatio->Divide(hZYReco, hZY);
+    hZYTRGRatio->Divide(hZYTRG, hZY);
+
+    cZY->cd(1);
+    gPad->SetRightMargin(0.15);
+    hZYRecoRatio->Draw("COLZ");
+
+    cZY->cd(2);
+    gPad->SetRightMargin(0.15);
+    hZYTRGRatio->Draw("COLZ");
+
+    // Z vs Theta
+    TCanvas * cZTheta = new TCanvas("cZTheta", "cZTheta");
+    cZTheta->Divide(2, 1);
+
+    TH2F * hZThetaRecoRatio = new TH2F(*hZThetaReco);
+    TH2F * hZThetaTRGRatio = new TH2F(*hZThetaTRG);
+    hZThetaRecoRatio->Divide(hZThetaReco, hZTheta);
+    hZThetaTRGRatio->Divide(hZThetaTRG, hZTheta);
+
+    cZTheta->cd(1);
+    gPad->SetRightMargin(0.15);
+    hZThetaRecoRatio->Draw("COLZ");
+
+    cZTheta->cd(2);
+    gPad->SetRightMargin(0.15);
+    hZThetaTRGRatio->Draw("COLZ");
 
     // Pixel Plot
     TCanvas * cPixel = new TCanvas("cPixel", "cPixel", 1000, 500);
@@ -452,6 +532,51 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     effEPosHitsReco->Draw();
     effEPosHitsTRG->Draw("SAME");
 
+    // Theta
+    TCanvas * cTheta = new TCanvas("cTheta", "cTheta", 1);
+    cTheta->Divide(1, 2);
+
+    cTheta->cd(1);
+    hTheta->SetLineColor(8);
+    hTheta->SetLineWidth(3);
+    hTheta->Draw();
+    hThetaReco->SetLineColor(kBlack);
+    hThetaReco->SetLineWidth(2);
+    hThetaTRG->SetLineColor(kRed);
+    hThetaTRG->SetLineWidth(2);
+    hThetaReco->Draw("SAME");
+    hThetaTRG->Draw("SAME");
+
+    cTheta->cd(2);
+    TEfficiency * effThetaReco = new TEfficiency(*hThetaReco, *hTheta);
+    TEfficiency * effThetaTRG = new TEfficiency(*hThetaTRG, *hTheta);
+    effThetaReco->SetLineColor(kBlack);
+    effThetaTRG->SetLineColor(kRed);
+    effThetaReco->Draw();
+    effThetaTRG->Draw("SAME");
+
+    // Phi
+    TCanvas * cPhi = new TCanvas("cPhi", "cPhi", 1);
+    cPhi->Divide(1, 2);
+
+    cPhi->cd(1);
+    hPhi->SetLineColor(8);
+    hPhi->SetLineWidth(3);
+    hPhi->Draw();
+    hPhiReco->SetLineColor(kBlack);
+    hPhiReco->SetLineWidth(2);
+    hPhiTRG->SetLineColor(kRed);
+    hPhiTRG->SetLineWidth(2);
+    hPhiReco->Draw("SAME");
+    hPhiTRG->Draw("SAME");
+
+    cPhi->cd(2);
+    TEfficiency * effPhiReco = new TEfficiency(*hPhiReco, *hPhi);
+    TEfficiency * effPhiTRG = new TEfficiency(*hPhiTRG, *hPhi);
+    effPhiReco->SetLineColor(kBlack);
+    effPhiTRG->SetLineColor(kRed);
+    effPhiReco->Draw();
+    effPhiTRG->Draw("SAME");
 }
 
 Int_t GetPatch(MEGXECPMRunHeader * pm)

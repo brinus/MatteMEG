@@ -67,6 +67,7 @@ void ShowEvent(Int_t runnum = -1, Int_t eventNum = -1, Int_t patchId = -1)
     else
     {
         loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+        //loadDMTable("/meg/home/brini_m/Documents/run24/dm_fullMC_001.mem");
         //loadDMTable("/meg/home/brini_m/Git/offline/analyzer/dmout.mem");
     }
 
@@ -194,12 +195,24 @@ void ShowEvent(Int_t runnum = -1, Int_t eventNum = -1, Int_t patchId = -1)
     {
         auto positron = (MEGGLBPositron *)GLBPositronRA->At(RecDataRV->GetPositronIndexAt(iPos));
         auto pixelid = positron->GetMatchedPixelID();
+        auto epos = RecDataRV->GetEPositronAt(iPos);
+        auto theta = RecDataRV->GetThetaPositronAt(iPos); 
+        auto phi = RecDataRV->GetPhiPositronAt(iPos);
+        auto xpos = RecDataRV->GetXPositronAt(iPos);
+        auto ypos = RecDataRV->GetYPositronAt(iPos);
+        auto zpos = RecDataRV->GetZPositronAt(iPos);
         Int_t iPixel = 0;
         while (pixelid != ((MEGSPXHit *)(SPXHitsRA->At(iPixel)))->Getpixelid())
             ++iPixel;
         auto time = ((MEGSPXHit *)SPXHitsRA->At(iPixel))->Gettime();
         cout << "Positron " << iPos + 1 << "/" << nPositron << endl;
         cout << "\tPixelID: " << pixelid << endl;      
+        cout << "\tEnergy: " << epos * 1000 << " MeV" << endl;
+        cout << "\tTheta: " << theta << endl;
+        cout << "\tPhi: " << phi << endl;
+        cout << "\tXPos: " << xpos << endl;
+        cout << "\tYPos: " << ypos << endl;
+        cout << "\tZPos: " << zpos << endl;
         if (isHitValid(runnum, time))
         {
             pixelSet[pixelid][0] = kBlue;

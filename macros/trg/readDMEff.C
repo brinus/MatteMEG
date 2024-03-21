@@ -1,18 +1,20 @@
 // --- readDMEff.C -------------------------------------------------------------o
 //                                                                              |
-// Version:     0.2                                                             |
+// Version:     0.3                                                             |
 // Author:      Matteo Brini                                                    |
-// Date:        18/03/2024                                                      |
+// Date:        19/03/2024                                                      |
 // E-mail:      brinimatteo@gmail.com                                           |
-//                                                                              |    
-// Macro to read output file of macros/trg/DMEfficiency.C. This macro generates |
-// the efficiency plots for direction match.                                    |
+//                                                                              |
+// Description:                                                                 |    
+//      Macro to read output file of macros/trg/DMEfficiency.C. This macro      |
+//      generates the efficiency plots for direction match.                     |
 //                                                                              |
 // -----------------------------------------------------------------------------o
 
 void readDMEff()
 {
-    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/outDMEfficiency_002.root", "READ");
+    //TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_wide001.root", "READ");
+    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_nar001.root", "READ");
     
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");
@@ -21,6 +23,14 @@ void readDMEff()
     TH2F * hTarget = (TH2F *)DMFile->Get("hTarget");
     TH2F * hTargetReco = (TH2F *)DMFile->Get("hTargetReco");
     TH2F * hTargetTRG = (TH2F *)DMFile->Get("hTargetTRG");
+
+    TH2F * hZY = (TH2F *)DMFile->Get("hZY");
+    TH2F * hZYReco = (TH2F *)DMFile->Get("hZYReco");
+    TH2F * hZYTRG = (TH2F *)DMFile->Get("hZYTRG");
+
+    TH2F * hZTheta = (TH2F *)DMFile->Get("hZTheta");
+    TH2F * hZThetaReco = (TH2F *)DMFile->Get("hZThetaReco");
+    TH2F * hZThetaTRG = (TH2F *)DMFile->Get("hZThetaTRG");
 
     TH2F * hPixelReco = (TH2F *)DMFile->Get("hPixelReco");
     TH2F * hPixelRecoGood = (TH2F *)DMFile->Get("hPixelRecoGood");
@@ -34,6 +44,14 @@ void readDMEff()
     TH1F * hEPosHits = (TH1F *)DMFile->Get("hEPosHits");
     TH1F * hEPosHitsReco = (TH1F *)DMFile->Get("hEPosHitsReco");
     TH1F * hEPosHitsTRG = (TH1F *)DMFile->Get("hEPosHitsTRG");
+
+    TH1F * hTheta = (TH1F *)DMFile->Get("hTheta");
+    TH1F * hThetaReco = (TH1F *)DMFile->Get("hThetaReco");
+    TH1F * hThetaTRG = (TH1F *)DMFile->Get("hThetaTRG");
+
+    TH1F * hPhi = (TH1F *)DMFile->Get("hPhi");
+    TH1F * hPhiReco = (TH1F *)DMFile->Get("hPhiReco");
+    TH1F * hPhiTRG = (TH1F *)DMFile->Get("hPhiTRG");
 
     // Efficiency Plot
     TCanvas * cEff = new TCanvas("cEff", "cEff", 1);
@@ -83,6 +101,40 @@ void readDMEff()
     cTarget->cd(2);
     gPad->SetRightMargin(0.15);
     hTargetTRGRatio->Draw("COLZ");
+    
+    // Z vs Y
+    TCanvas * cZY = new TCanvas("cZY", "cZY", 1000, 500);
+    cZY->Divide(2, 1);
+
+    TH2F * hZYRecoRatio = new TH2F(*hZYReco);
+    TH2F * hZYTRGRatio = new TH2F(*hZYTRG);
+    hZYRecoRatio->Divide(hZYReco, hZY);
+    hZYTRGRatio->Divide(hZYTRG, hZY);
+
+    cZY->cd(1);
+    gPad->SetRightMargin(0.15);
+    hZYRecoRatio->Draw("COLZ");
+
+    cZY->cd(2);
+    gPad->SetRightMargin(0.15);
+    hZYTRGRatio->Draw("COLZ");
+
+    // Z vs Theta
+    TCanvas * cZTheta = new TCanvas("cZTheta", "cZTheta");
+    cZTheta->Divide(2, 1);
+
+    TH2F * hZThetaRecoRatio = new TH2F(*hZThetaReco);
+    TH2F * hZThetaTRGRatio = new TH2F(*hZThetaTRG);
+    hZThetaRecoRatio->Divide(hZThetaReco, hZTheta);
+    hZThetaTRGRatio->Divide(hZThetaTRG, hZTheta);
+
+    cZTheta->cd(1);
+    gPad->SetRightMargin(0.15);
+    hZThetaRecoRatio->Draw("COLZ");
+
+    cZTheta->cd(2);
+    gPad->SetRightMargin(0.15);
+    hZThetaTRGRatio->Draw("COLZ");
 
     // Pixel Plot
     TCanvas * cPixel = new TCanvas("cPixel", "cPixel", 1000, 500);
@@ -154,4 +206,54 @@ void readDMEff()
     effEPosHitsTRG->SetLineColor(kRed);
     effEPosHitsReco->Draw();
     effEPosHitsTRG->Draw("SAME");
+    
+    // Theta
+    TCanvas * cTheta = new TCanvas("cTheta", "cTheta", 1);
+    cTheta->Divide(1, 2);
+
+    cTheta->cd(1);
+    hTheta->SetLineColor(8);
+    hTheta->SetLineWidth(3);
+    hTheta->Draw();
+    hThetaReco->SetLineColor(kBlack);
+    hThetaReco->SetLineWidth(2);
+    hThetaTRG->SetLineColor(kRed);
+    hThetaTRG->SetLineWidth(2);
+    hThetaReco->Draw("SAME");
+    hThetaTRG->Draw("SAME");
+
+    cTheta->cd(2);
+    TEfficiency * effThetaReco = new TEfficiency(*hThetaReco, *hTheta);
+    TEfficiency * effThetaTRG = new TEfficiency(*hThetaTRG, *hTheta);
+    effThetaReco->SetLineColor(kBlack);
+    effThetaReco->SetLineWidth(2);
+    effThetaTRG->SetLineColor(kRed);
+    effThetaTRG->SetLineWidth(2);
+    effThetaReco->Draw();
+    effThetaTRG->Draw("SAME");
+
+    // Phi
+    TCanvas * cPhi = new TCanvas("cPhi", "cPhi", 1);
+    cPhi->Divide(1, 2);
+
+    cPhi->cd(1);
+    hPhi->SetLineColor(8);
+    hPhi->SetLineWidth(3);
+    hPhi->Draw();
+    hPhiReco->SetLineColor(kBlack);
+    hPhiReco->SetLineWidth(2);
+    hPhiTRG->SetLineColor(kRed);
+    hPhiTRG->SetLineWidth(2);
+    hPhiReco->Draw("SAME");
+    hPhiTRG->Draw("SAME");
+
+    cPhi->cd(2);
+    TEfficiency * effPhiReco = new TEfficiency(*hPhiReco, *hPhi);
+    TEfficiency * effPhiTRG = new TEfficiency(*hPhiTRG, *hPhi);
+    effPhiReco->SetLineColor(kBlack);
+    effPhiReco->SetLineWidth(2);
+    effPhiTRG->SetLineColor(kRed);
+    effPhiTRG->SetLineWidth(2);
+    effPhiReco->Draw();
+    effPhiTRG->Draw("SAME");
 }
