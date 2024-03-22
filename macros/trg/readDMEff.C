@@ -14,7 +14,7 @@
 void readDMEff()
 {
     //TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_wide001.root", "READ");
-    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_nar001.root", "READ");
+    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_rad2_nar001.root", "READ");
     
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");

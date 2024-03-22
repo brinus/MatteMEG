@@ -24,12 +24,12 @@ Bool_t isHitValid(Int_t, Float_t);
 Bool_t isOrTRG(Int_t, vector<Int_t> &);
 void loadDMTable(const char *);
 
-void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
+void DMEfficiency_noTRG(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
     const Bool_t kVerbose = false;
-    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
-    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
+    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
     //loadDMTable("/meg/home/brini_m/Documents/run24/dm_fullMC_001.mem");
 
     // TChain
@@ -43,7 +43,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 
     //for (Int_t iFile = runNum; iFile < runNum + nInFiles; ++iFile)
     //    nFiles += rec->Add(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", iFile / 1000, iFile));
-    nFiles += rec->Add("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21/*.root");
+    nFiles += rec->Add("/meg/home/francesconi_m/git/offline/analyzer/distilled/dm2021/*.root");
 
     nEntries = rec->GetEntries();
     cout << "Got " << nFiles << " files" << endl;
@@ -93,23 +93,17 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     ROMETreeInfo    * InfoRV = 0;
     MEGEventHeader  * EventHeaderRV = 0;
     MEGRecData      * RecDataRV = 0;
-    MEGTRGSPXOnline * TRGSPXOnlineRV = 0;
-    TClonesArray    * SPXHitsRA = 0;
     TClonesArray    * GLBPositronRA = 0;
 
     rec->SetBranchStatus("*", 0);
     rec->SetBranchStatus("Info.*", 1);
     rec->SetBranchStatus("eventheader.*");
     rec->SetBranchStatus("reco.*", 1);
-    rec->SetBranchStatus("trgspxonline.*", 1);
-    rec->SetBranchStatus("spxhits*", 1);
     rec->SetBranchStatus("positron*", 1);
 
     rec->SetBranchAddress("Info.", &InfoRV);
     rec->SetBranchAddress("eventheader.", &EventHeaderRV);
     rec->SetBranchAddress("reco.", &RecDataRV);
-    rec->SetBranchAddress("trgspxonline.", &TRGSPXOnlineRV);
-    rec->SetBranchAddress("spxhits", &SPXHitsRA);
     rec->SetBranchAddress("positron", &GLBPositronRA);
 
     // ROOT Histogams
@@ -163,32 +157,6 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
         auto mask = EventHeaderRV->Getmask();
         if (mask!=21) continue;
 
-        // TRGSPXOnline LOOP
-        vector<Int_t> vecpixelIdTRG = {};
-        auto nTRGSPXTracks = TRGSPXOnlineRV->GetnSPXTracks();
-        for (Int_t iTrack = 0; iTrack < nTRGSPXTracks; ++iTrack)
-        {
-            auto pixelIdTRG = TRGSPXOnlineRV->GetTrackTileIdAt(iTrack);
-            auto coarse = TRGSPXOnlineRV->GetTrackCoarseTimeAt(iTrack);
-            if (isCoarseValid(run, coarse))
-                vecpixelIdTRG.push_back(pixelIdTRG);
-        }
-        if (vecpixelIdTRG.size() == 0)
-            continue;
-
-        // SPXHits LOOP
-        vector<Int_t> vecpixelIdSPX = {};
-        auto nSPXHits = SPXHitsRA->GetEntries();
-        for (Int_t iHit = 0; iHit < nSPXHits; ++iHit)
-        {
-            auto pixelIdSPX = ((MEGSPXHit *)SPXHitsRA->At(iHit))->Getpixelid();
-            auto time = ((MEGSPXHit *)SPXHitsRA->At(iHit))->Gettime();
-            if (isHitValid(run, time))
-                vecpixelIdSPX.push_back(pixelIdSPX);
-        }
-        if (vecpixelIdSPX.size() == 0)
-            continue;
-        
         // RecData LOOP
         auto nPositrons = RecDataRV->GetNPositron();
         for (Int_t iPositron = 0; iPositron < nPositrons; iPositron++) 
@@ -212,7 +180,6 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             bool ePosCutFine = epos < 0.05265 || epos > 0.05295;
             bool posXECAcceptance = positron->GetXECAcceptance();
             bool posNGoodhits = positron->Getngoodhits() > 45;
-            bool isInRadius = xpos * xpos + ypos * ypos < 4;
 
             if (ePosCut || !posXECAcceptance)
                 continue;
@@ -267,39 +234,25 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             MEGXECPMRunHeader * pmrunh =(MEGXECPMRunHeader *)XECPMRunHeaderRA->At(uID + vID * 44);
             Int_t patchId = GetPatch(pmrunh);
 
-            // Check if pixelIdReco is in postmark
-            bool isRecoInPostStamp = false;
-            for (auto & pixelIdSPX : vecpixelIdSPX)
-            {
-                if (pixelIdReco == pixelIdSPX)
-                    isRecoInPostStamp = true;
-            }
-
             // Quality checks
             bool goodPatchId = patchId >= 0 && patchId < 256;
             bool goodPixelId = pixelIdReco >= 0 && pixelIdReco < 512;
 
             // Filling histograms
-            if(goodPatchId && goodPixelId && isRecoInPostStamp)
+            if(goodPatchId && goodPixelId)
             {
                 hEPos->Fill(epos * 1000);
-                if (vecpixelIdSPX.size() > 1)
-                    hEPosHits->Fill(epos * 1000);
                 if (!ePosCutFine)
                 {
                     hTarget->Fill(xpos, ypos);
                     hZY->Fill(zpos, ypos);
                     hZTheta->Fill(zpos, thetapos);
                     hPixelReco->Fill(pixelIdReco % 16, pixelIdReco / 16);
-                    hPixelTRG->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
-                    hNHits->Fill(vecpixelIdSPX.size());
                     hTheta->Fill(thetapos);
                     hPhi->Fill(phipos);
                 }
 
-                bool print00 = !isOrTRG(patchId, vecpixelIdTRG) && !ePosCutFine;
-                bool print01 = nPositrons > 1;
-                if (kVerbose && print00)
+                if (kVerbose)
                 {
                     cout << "--------------------------------" << endl;
                     cout << "Run/evt: " << run << "/" << event << endl;
@@ -313,34 +266,14 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
                 if (DMTable[patchId][pixelIdReco])
                 {
                     hEPosReco->Fill(epos * 1000);
-                    if (vecpixelIdSPX.size() > 1)
-                        hEPosHitsReco->Fill(epos * 1000);
                     if (!ePosCutFine)
                     {
                         hTargetReco->Fill(xpos, ypos);
                         hZYReco->Fill(zpos, ypos);
                         hZThetaReco->Fill(zpos, thetapos);
                         hPixelRecoGood->Fill(pixelIdReco % 16, pixelIdReco / 16);
-                        hNHitsReco->Fill(vecpixelIdSPX.size());
                         hThetaReco->Fill(thetapos);
                         hPhiReco->Fill(phipos);
-                    }
-                }
-
-                if (isOrTRG(patchId, vecpixelIdTRG))
-                {
-                    hEPosTRG->Fill(epos * 1000);   
-                    if (vecpixelIdSPX.size() > 1)
-                        hEPosHitsTRG->Fill(epos * 1000);
-                    if (!ePosCutFine)
-                    {
-                        hTargetTRG->Fill(xpos, ypos);
-                        hZYTRG->Fill(zpos, ypos);
-                        hZThetaTRG->Fill(zpos, thetapos);
-                        hPixelTRGGood->Fill(vecpixelIdTRG[0] % 16, vecpixelIdTRG[0] / 16);
-                        hNHitsTRG->Fill(vecpixelIdSPX.size());
-                        hThetaTRG->Fill(thetapos);
-                        hPhiTRG->Fill(phipos);
                     }
                 }
             }
@@ -351,53 +284,35 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     // Plots
     if (isROOTFileOn)
     {
-        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_wide002.root";
+        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_nar001.root";
         cout << "Writing to " << outPath << endl;
         TFile outFile(outPath, "RECREATE");  
         hEPos->Write();
         hEPosReco->Write();
-        hEPosTRG->Write(); 
         
         // Target
         hTarget->Write();
         hTargetReco->Write();
-        hTargetTRG->Write();
 
         // Z vs Y
         hZY->Write();
         hZYReco->Write();
-        hZYTRG->Write();
 
         // Z vs Theta
         hZTheta->Write();
         hZThetaReco->Write();
-        hZThetaTRG->Write();
 
         // Pixel
         hPixelReco->Write();
         hPixelRecoGood->Write();
-        hPixelTRG->Write();
-        hPixelTRGGood->Write();
 
-        // nHits
-        hNHits->Write();
-        hNHitsReco->Write();
-        hNHitsTRG->Write();
-
-        // EPosHits
-        hEPosHits->Write();
-        hEPosHitsReco->Write();
-        hEPosHitsTRG->Write();
-    
         // Theta
         hTheta->Write();
         hThetaReco->Write();
-        hThetaTRG->Write();
 
         // Phi
         hPhi->Write();
         hPhiReco->Write();
-        hPhiTRG->Write();
     }
 
     if (!isPlotOn)
@@ -413,125 +328,50 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     hEPos->Draw();
     hEPosReco->SetLineColor(kRed);
     hEPosReco->Draw("SAME");
-    hEPosTRG->SetLineColor(kBlue);
-    hEPosTRG->Draw("SAME");
 
     cEff->cd(2); 
     TEfficiency *effReco = new TEfficiency(*hEPosReco, *hEPos);
-    TEfficiency *effTRG  = new TEfficiency(*hEPosTRG, *hEPos);
 
     effReco->SetTitle(";;Efficiency");
 
     effReco->SetLineColor(kRed);
     effReco->Draw();
-    effTRG->SetLineColor(kBlue);
-    effTRG->Draw("SAME");
 
     // Target Plot
     TCanvas * cTarget = new TCanvas("cTarget", "cTarget", 1000, 500);
-    cTarget->Divide(2, 1);
 
     TH2F * hTargetRecoRatio = new TH2F(*hTargetReco);
-    TH2F * hTargetTRGRatio = new TH2F(*hTargetTRG);
     hTargetRecoRatio->Divide(hTargetReco, hTarget);
-    hTargetTRGRatio->Divide(hTargetTRG, hTarget);
 
-    cTarget->cd(1);
     gPad->SetRightMargin(0.15);
     hTargetRecoRatio->Draw("COLZ");
 
-    cTarget->cd(2);
-    gPad->SetRightMargin(0.15);
-    hTargetTRGRatio->Draw("COLZ");
-
     // Z vs Y
     TCanvas * cZY = new TCanvas("cZY", "cZY", 1000, 500);
-    cZY->Divide(2, 1);
 
     TH2F * hZYRecoRatio = new TH2F(*hZYReco);
-    TH2F * hZYTRGRatio = new TH2F(*hZYTRG);
     hZYRecoRatio->Divide(hZYReco, hZY);
-    hZYTRGRatio->Divide(hZYTRG, hZY);
 
-    cZY->cd(1);
     gPad->SetRightMargin(0.15);
     hZYRecoRatio->Draw("COLZ");
 
-    cZY->cd(2);
-    gPad->SetRightMargin(0.15);
-    hZYTRGRatio->Draw("COLZ");
-
     // Z vs Theta
     TCanvas * cZTheta = new TCanvas("cZTheta", "cZTheta");
-    cZTheta->Divide(2, 1);
 
     TH2F * hZThetaRecoRatio = new TH2F(*hZThetaReco);
-    TH2F * hZThetaTRGRatio = new TH2F(*hZThetaTRG);
     hZThetaRecoRatio->Divide(hZThetaReco, hZTheta);
-    hZThetaTRGRatio->Divide(hZThetaTRG, hZTheta);
 
-    cZTheta->cd(1);
     gPad->SetRightMargin(0.15);
     hZThetaRecoRatio->Draw("COLZ");
 
-    cZTheta->cd(2);
-    gPad->SetRightMargin(0.15);
-    hZThetaTRGRatio->Draw("COLZ");
-
     // Pixel Plot
     TCanvas * cPixel = new TCanvas("cPixel", "cPixel", 1000, 500);
-    cPixel->Divide(2, 1);
 
     TH2F * hPixelRecoRatio = new TH2F(*hPixelRecoGood);
-    TH2F * hPixelTRGRatio = new TH2F(*hPixelTRGGood);
     hPixelRecoRatio->Divide(hPixelRecoGood, hPixelReco);
-    hPixelTRGRatio->Divide(hPixelTRGGood, hPixelTRG);
 
-    cPixel->cd(1);
     gPad->SetRightMargin(0.15);
     hPixelRecoRatio->Draw("COLZ");
-
-    cPixel->cd(2);
-    gPad->SetRightMargin(0.15);
-    hPixelTRGRatio->Draw("COLZ");
-
-    // NHits
-    TCanvas * cNHits = new TCanvas("cNHits", "cNHits", 1);
-    cNHits->Divide(1, 2);
-
-    cNHits->cd(1);
-    hNHits->Draw();
-    hNHitsReco->SetLineColor(kRed);
-    hNHitsTRG->SetLineColor(kBlue);
-    hNHitsReco->Draw("SAME");
-    hNHitsTRG->Draw("SAME");
-
-    cNHits->cd(2);
-    TEfficiency * effNHitsReco = new TEfficiency(*hNHitsReco, *hNHits);
-    TEfficiency * effNHitsTRG = new TEfficiency(*hNHitsTRG, *hNHits);
-    effNHitsReco->SetLineColor(kRed);
-    effNHitsTRG->SetLineColor(kBlue);
-    effNHitsReco->Draw();
-    effNHitsTRG->Draw("SAME");
-
-    // EPos for nHits > 1
-    TCanvas * cEPosHits = new TCanvas("cEPosHits", "cEPosHits", 1);
-    cEPosHits->Divide(1, 2);
-
-    cEPosHits->cd(1);
-    hEPosHits->Draw();
-    hEPosHitsReco->SetLineColor(kRed);
-    hEPosHitsTRG->SetLineColor(kBlue);
-    hEPosHitsReco->Draw("SAME");
-    hEPosHitsTRG->Draw("SAME");
-
-    cEPosHits->cd(2);
-    TEfficiency * effEPosHitsReco = new TEfficiency(*hEPosHitsReco, *hEPosHits);
-    TEfficiency * effEPosHitsTRG = new TEfficiency(*hEPosHitsTRG, *hEPosHits);
-    effEPosHitsReco->SetLineColor(kRed);
-    effEPosHitsTRG->SetLineColor(kBlue);
-    effEPosHitsReco->Draw();
-    effEPosHitsTRG->Draw("SAME");
 
     // Theta
     TCanvas * cTheta = new TCanvas("cTheta", "cTheta", 1);
@@ -543,18 +383,12 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     hTheta->Draw();
     hThetaReco->SetLineColor(kBlack);
     hThetaReco->SetLineWidth(2);
-    hThetaTRG->SetLineColor(kRed);
-    hThetaTRG->SetLineWidth(2);
     hThetaReco->Draw("SAME");
-    hThetaTRG->Draw("SAME");
 
     cTheta->cd(2);
     TEfficiency * effThetaReco = new TEfficiency(*hThetaReco, *hTheta);
-    TEfficiency * effThetaTRG = new TEfficiency(*hThetaTRG, *hTheta);
     effThetaReco->SetLineColor(kBlack);
-    effThetaTRG->SetLineColor(kRed);
     effThetaReco->Draw();
-    effThetaTRG->Draw("SAME");
 
     // Phi
     TCanvas * cPhi = new TCanvas("cPhi", "cPhi", 1);
@@ -566,18 +400,12 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     hPhi->Draw();
     hPhiReco->SetLineColor(kBlack);
     hPhiReco->SetLineWidth(2);
-    hPhiTRG->SetLineColor(kRed);
-    hPhiTRG->SetLineWidth(2);
     hPhiReco->Draw("SAME");
-    hPhiTRG->Draw("SAME");
 
     cPhi->cd(2);
     TEfficiency * effPhiReco = new TEfficiency(*hPhiReco, *hPhi);
-    TEfficiency * effPhiTRG = new TEfficiency(*hPhiTRG, *hPhi);
     effPhiReco->SetLineColor(kBlack);
-    effPhiTRG->SetLineColor(kRed);
     effPhiReco->Draw();
-    effPhiTRG->Draw("SAME");
 }
 
 Int_t GetPatch(MEGXECPMRunHeader * pm)
