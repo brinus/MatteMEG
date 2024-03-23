@@ -1,8 +1,8 @@
 // --- DMEfficiency.C ----------------------------------------------------------o
 //                                                                              |
-// Version:     0.2                                                             |
+// Version:     0.3                                                             |
 // Author:      Matteo Brini                                                    |
-// Date:        14/03/2024                                                      |
+// Date:        23/03/2024                                                      |
 // E-mail:      brinimatteo@gmail.com                                           |
 //                                                                              |
 // Description:                                                                 |

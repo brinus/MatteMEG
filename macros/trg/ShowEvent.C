@@ -1,13 +1,17 @@
 // --- ShowEvent.C -------------------------------------------------------------o
 //                                                                              |
-// Version:     0.1                                                             |
+// Version:     0.2                                                             |
 // Author:      Matteo Brini                                                    |
-// Date:        16/03/24                                                        |
+// Date:        23/03/24                                                        |
 // E-mail:      brinimatteo@gmail.com                                           |
 //                                                                              |
 // Description:                                                                 |
 //      Macro to draw a visualization of timing counter pixels. The user must   |
-//      give in input a runnumber and an event number.                          |
+//      give in input a runnumber and an event number. If a third input is      |
+//      given, it is stored as the patch number selected. In this case, the     |
+//      green set of SPX tiles is substituted by the yellow set of entries from |
+//      the DMTable. The yellow tiles then are those selected from the DMTable  |
+//      for that specific patch Id.                                             |
 //                                                                              |
 //------------------------------------------------------------------------------o
 
