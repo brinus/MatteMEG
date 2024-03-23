@@ -1,8 +1,8 @@
 // --- readDMEff.C -------------------------------------------------------------o
 //                                                                              |
-// Version:     0.3                                                             |
+// Version:     0.4                                                             |
 // Author:      Matteo Brini                                                    |
-// Date:        19/03/2024                                                      |
+// Date:        21/03/2024                                                      |
 // E-mail:      brinimatteo@gmail.com                                           |
 //                                                                              |
 // Description:                                                                 |    
@@ -11,10 +11,54 @@
 //                                                                              |
 // -----------------------------------------------------------------------------o
 
+#include "TStyle.h"
+#include "TFile.h"
+#include "TH1F.h"
+#include "TH2F.h"
+#include "TEfficiency.h"
+#include "TCanvas.h"
+#include "TLegend.h"
+#include "TStyle.h"
+
 void readDMEff()
+
 {
-    //TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_wide001.root", "READ");
-    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_rad2_nar001.root", "READ");
+    gStyle->SetLabelFont(22, "x"); // Set the font for the x-axis label
+    gStyle->SetLabelFont(22, "y"); // Set the font for the y-axis label
+    gStyle->SetLabelFont(22, "z"); // Set the font for the z-axis label
+    gStyle->SetLabelSize(0.06, "x"); // Set the size of the x-axis label
+    gStyle->SetLabelSize(0.06, "y"); // Set the size of the y-axis label
+    gStyle->SetLabelSize(0.06, "z"); // Set the size of the z-axis label
+
+    gStyle->SetTitleFont(22, "x"); // Set the font for the x-axis title
+    gStyle->SetTitleFont(22, "y"); // Set the font for the y-axis title
+    gStyle->SetTitleFont(22, "z"); // Set the font for the z-axis title
+    gStyle->SetTitleSize(0.06, "x"); // Set the size of the x-axis title
+    gStyle->SetTitleSize(0.06, "y"); // Set the size of the y-axis title
+    gStyle->SetTitleSize(0.06, "z"); // Set the size of the z-axis title
+    gStyle->SetTitleOffset(0.8, "x"); // Set the offset of the x-axis title
+    gStyle->SetTitleOffset(0.8, "y"); // Set the offset of the y-axis title
+    gStyle->SetTitleOffset(0.8, "z"); // Set the offset of the z-axis title
+
+    gStyle->SetPadGridX(1);
+    gStyle->SetPadGridY(1);
+
+    gStyle->SetPadLeftMargin(0.15);
+    gStyle->SetPadRightMargin(0.15);
+    gStyle->SetPadTopMargin(0.1);
+    gStyle->SetPadBottomMargin(0.15);
+
+    gStyle->SetCanvasDefW(700); // Set the default width of the canvas
+    gStyle->SetCanvasDefH(800); // Set the default height of the canvas
+
+    gStyle->SetStatFont(22); // Set the font for the statbox
+    gStyle->SetStatFontSize(0.06); // Set the font size for the statbox
+    gStyle->SetStatX(0.9); // Set the X position of the statbox
+    gStyle->SetStatY(0.9); // Set the Y position of the statbox
+    gStyle->SetStatW(0.2); // Set the width of the statbox
+    gStyle->SetStatH(0.15); // Set the height of the statbox
+
+    TFile * DMFile = new TFile("outfiles/distill_dm21_nar001.root", "READ");
     
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");
@@ -91,15 +135,15 @@ void readDMEff()
 
     TH2F * hTargetRecoRatio = new TH2F(*hTargetReco);
     TH2F * hTargetTRGRatio = new TH2F(*hTargetTRG);
+    hTargetRecoRatio->SetTitle(";x [cm];y [cm]");
+    hTargetTRGRatio->SetTitle(";x [cm];y [cm]");
     hTargetRecoRatio->Divide(hTargetReco, hTarget);
     hTargetTRGRatio->Divide(hTargetTRG, hTarget);
 
     cTarget->cd(1);
-    gPad->SetRightMargin(0.15);
     hTargetRecoRatio->Draw("COLZ");
 
     cTarget->cd(2);
-    gPad->SetRightMargin(0.15);
     hTargetTRGRatio->Draw("COLZ");
     
     // Z vs Y
@@ -108,15 +152,15 @@ void readDMEff()
 
     TH2F * hZYRecoRatio = new TH2F(*hZYReco);
     TH2F * hZYTRGRatio = new TH2F(*hZYTRG);
+    hZYRecoRatio->SetTitle(";z [cm];y [cm]");
+    hZYTRGRatio->SetTitle(";z [cm];y [cm]");
     hZYRecoRatio->Divide(hZYReco, hZY);
     hZYTRGRatio->Divide(hZYTRG, hZY);
 
     cZY->cd(1);
-    gPad->SetRightMargin(0.15);
     hZYRecoRatio->Draw("COLZ");
 
     cZY->cd(2);
-    gPad->SetRightMargin(0.15);
     hZYTRGRatio->Draw("COLZ");
 
     // Z vs Theta
@@ -125,15 +169,19 @@ void readDMEff()
 
     TH2F * hZThetaRecoRatio = new TH2F(*hZThetaReco);
     TH2F * hZThetaTRGRatio = new TH2F(*hZThetaTRG);
+    hZThetaRecoRatio->SetMinimum(-0.1);
+    hZThetaRecoRatio->SetMaximum(1.1);
+    hZThetaTRGRatio->SetMinimum(-0.1);
+    hZThetaTRGRatio->SetMaximum(1.1);
+    hZThetaRecoRatio->SetTitle(";z [cm];#theta [#circ]");
+    hZThetaTRGRatio->SetTitle(";z [cm];#theta [#circ]");
     hZThetaRecoRatio->Divide(hZThetaReco, hZTheta);
     hZThetaTRGRatio->Divide(hZThetaTRG, hZTheta);
 
     cZTheta->cd(1);
-    gPad->SetRightMargin(0.15);
     hZThetaRecoRatio->Draw("COLZ");
 
     cZTheta->cd(2);
-    gPad->SetRightMargin(0.15);
     hZThetaTRGRatio->Draw("COLZ");
 
     // Pixel Plot
@@ -146,10 +194,10 @@ void readDMEff()
     hPixelTRGRatio->Divide(hPixelTRGGood, hPixelTRG);
 
     cPixel->cd(1);
-    gPad->SetRightMargin(0.15);
     hPixelRecoRatio->Draw("COLZ");
 
     cPixel->cd(2);
+    gPad->SetLeftMargin(0.15);
     gPad->SetRightMargin(0.15);
     hPixelTRGRatio->Draw("COLZ");
     
@@ -209,9 +257,11 @@ void readDMEff()
     
     // Theta
     TCanvas * cTheta = new TCanvas("cTheta", "cTheta", 1);
+    TLegend * legTheta = new TLegend(0.15, 0.7, 0.25, 0.9, "", "NDC");
     cTheta->Divide(1, 2);
 
     cTheta->cd(1);
+    hTheta->SetTitle(";#theta [#circ];Events");
     hTheta->SetLineColor(8);
     hTheta->SetLineWidth(3);
     hTheta->Draw();
@@ -222,9 +272,15 @@ void readDMEff()
     hThetaReco->Draw("SAME");
     hThetaTRG->Draw("SAME");
 
+    legTheta->AddEntry(hTheta, "e^{+}", "L");
+    legTheta->AddEntry(hThetaReco, "e^{+}_{reco}", "L");
+    legTheta->AddEntry(hThetaTRG, "e^{+}_{TRG}", "L");
+    legTheta->Draw();
+
     cTheta->cd(2);
     TEfficiency * effThetaReco = new TEfficiency(*hThetaReco, *hTheta);
     TEfficiency * effThetaTRG = new TEfficiency(*hThetaTRG, *hTheta);
+    effThetaReco->SetTitle(";#theta [#circ];Efficiency");
     effThetaReco->SetLineColor(kBlack);
     effThetaReco->SetLineWidth(2);
     effThetaTRG->SetLineColor(kRed);
@@ -234,9 +290,11 @@ void readDMEff()
 
     // Phi
     TCanvas * cPhi = new TCanvas("cPhi", "cPhi", 1);
+    TLegend * legPhi = new TLegend(0.15, 0.7, 0.25, 0.9, "", "NDC");
     cPhi->Divide(1, 2);
 
     cPhi->cd(1);
+    hPhi->SetTitle(";#phi [#circ];Events");
     hPhi->SetLineColor(8);
     hPhi->SetLineWidth(3);
     hPhi->Draw();
@@ -247,9 +305,15 @@ void readDMEff()
     hPhiReco->Draw("SAME");
     hPhiTRG->Draw("SAME");
 
+    legPhi->AddEntry(hPhi, "e^{+}", "L");
+    legPhi->AddEntry(hPhiReco, "e^{+}_{reco}", "L");
+    legPhi->AddEntry(hPhiTRG, "e^{+}_{TRG}", "L");
+    legPhi->Draw();
+
     cPhi->cd(2);
     TEfficiency * effPhiReco = new TEfficiency(*hPhiReco, *hPhi);
     TEfficiency * effPhiTRG = new TEfficiency(*hPhiTRG, *hPhi);
+    effPhiReco->SetTitle(";#phi [#circ];Efficiency");
     effPhiReco->SetLineColor(kBlack);
     effPhiReco->SetLineWidth(2);
     effPhiTRG->SetLineColor(kRed);
