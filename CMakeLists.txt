@@ -1,29 +1,26 @@
-cmake_minimum_required(VERSION 3.0)
-project(MatteMEG)
+project(MatteMEG CXX)
+cmake_minimum_required(VERSION 3.9)
+#if(POLICY CMP0074)
+#    cmake_policy(SET CMP0074 OLD)
+#endif()
 
-# Standard C++17
+# Imposta lo standard del linguaggio C++ su C++17 e richiedi l'uso di tale standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# CERN ROOT
-find_package(ROOT REQUIRED)
+# Trova e include CERN ROOT
+find_package(ROOT CONFIG REQUIRED)
+
+# Includi le directory di inclusione di ROOT e quelle personalizzate
 include_directories(${ROOT_INCLUDE_DIRS})
-include_directories(/opt/homebrew/Cellar/nlohmann-json/3.11.2)
+include_directories(include)
 
-# Main files for static library
-add_library(LibXec STATIC
-    include/XecHeader.hpp
-    src/XecHeader.cpp
-)
+# Definisci la directory di output per le librerie condivise
+set(LIBRARY_OUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
-# Macros' main
-add_executable(readrun macros/ReadRun.cpp)
-add_executable(cexmappatch macros/xec/CexMapPatch.cpp)
+# Crea la libreria condivisa MMUtils utilizzando il file di implementazione MMUtils.C
+add_library(MMUtils SHARED src/MMUtils.C)
 
-# Collega gli eseguibili alla libreria statica e a CERN ROOT
-target_link_libraries(readrun LibXec ${ROOT_LIBRARIES})
-target_link_libraries(cexmappatch LibXec ${ROOT_LIBRARIES})
+# Definisci il target personalizzato "utils" che dipende dalla libreria MMUtils
+add_custom_target(utils DEPENDS MMUtils)
 
-# Aggiungi le directory di inclusione di CERN ROOT
-target_include_directories(readrun PRIVATE ${ROOT_INCLUDE_DIRS})
-target_include_directories(cexmappatch PRIVATE ${ROOT_INCLUDE_DIRS})

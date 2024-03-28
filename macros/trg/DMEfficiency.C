@@ -99,7 +99,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 
     rec->SetBranchStatus("*", 0);
     rec->SetBranchStatus("Info.*", 1);
-    rec->SetBranchStatus("eventheader.*");
+    rec->SetBranchStatus("eventheader.*", 1);
     rec->SetBranchStatus("reco.*", 1);
     rec->SetBranchStatus("trgspxonline.*", 1);
     rec->SetBranchStatus("spxhits*", 1);
@@ -161,7 +161,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
         auto event = InfoRV->GetEventNumber();
 
         auto mask = EventHeaderRV->Getmask();
-        if (mask!=21) continue;
+        if (mask!=21 && mask != 20) continue;
 
         // TRGSPXOnline LOOP
         vector<Int_t> vecpixelIdTRG = {};
