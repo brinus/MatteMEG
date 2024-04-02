@@ -13,19 +13,39 @@
 #ifndef MMUTILS_H
 #define MMUTILS_H
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
+#include <vector>
 #include <TChain.h>
 
-namespace MMUtils
+class MMUtils
 {
-    // Functions
-    TChain * MakeTChain(const std::string pathFiles);
-    TChain * MakeTChain(const int & startRun, const int & nFiles);
+    public:
+        MMUtils();
+ 
+        // Setter
+        void SetTreeName(const std::string &);
+        void SetRecType(const std::string &);
+        void SetChainPath(const std::string &);
 
-    // Variables
-    std::string treeName = "rec";
-    std::string rectype = "_unbiassed";
-    std::string path = "/meg/data1/offline/run";
-}
+        // Getter
+        const std::string & GetTreeName();
+        const std::string & GetRecType();
+        const std::string & GetChainPath();
+
+        // Methods
+        TChain * MakeTChain(const std::string &);
+        TChain * MakeTChain(const int &, const int &);
+        TChain * MakeTChainFromFile(const std::string &);
+        
+        const std::vector<int> ParseLine(const std::string &);
+
+    private:
+        std::string treeName_;
+        std::string recType_;
+        std::string chainPath_;
+};
 
 #endif

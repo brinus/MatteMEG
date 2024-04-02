@@ -24,12 +24,14 @@ void DMGamma()
 {
     // Initial setup;
     const Bool_t kVerbose = false;
-    Int_t selectedRun = 385924;
-    Int_t selectedEvent = 935;
-    std::string pathFiles = "/meg/home/brini_m/Git/offline/analyzer/distilled/dm21/*.root";
-
+    Int_t selectedRun = -1;
+    Int_t selectedEvent = -1;
+    MMUtils utils;
+    
     // TChain
-    TChain * rec = MMUtils::MakeTChain(pathFiles);
+    //TChain * rec = utils.MakeTChain("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21");
+    //TChain * rec = utils.MakeTChain(383500, 100);
+    TChain * rec = utils.MakeTChainFromFile("/meg/home/brini_m/Documents/CWrunlist.txt");
 
     Long_t nEntries = rec->GetEntries();
     cout << "Got " << nEntries << " entries" << endl;
