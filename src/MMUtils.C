@@ -73,10 +73,8 @@ TChain * MMUtils::MakeTChain(const int & startRun, const int & nFiles)
 TChain * MMUtils::MakeTChainFromFile(const std::string & inFileName)
 {
     std::ifstream inputFile(inFileName);
-    if (!inputFile.is_open()) {
-        std::cout << "Error in file opening!" << std::endl;
-        return 0;
-    }
+    if (!inputFile.is_open())
+        throw std::runtime_error("Error in file opening!");
 
     std::vector<int> numbers;
     std::string line;
