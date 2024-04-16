@@ -28,26 +28,34 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
     const Bool_t kVerbose = false;
-    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
-    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+    MEGPhysicsSelection physSelect;
+    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
+    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
     //loadDMTable("/meg/home/brini_m/Documents/run24/dm_fullMC_001.mem");
+
+    physSelect.SetThresholds(EBeamPeriodID::kBeamPeriod2021, kTRUE);
 
     // TChain
     TChain * rec = new TChain("rec");
 
     Int_t runNum = 393500;
-    Int_t nInFiles = 1000;
+    Int_t nInFiles = 20000;
     Int_t endFile = 427120; 
     Int_t nFiles = 0;
     Int_t nEntries = 0;
 
     //for (Int_t iFile = runNum; iFile < runNum + nInFiles; ++iFile)
     //    nFiles += rec->Add(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", iFile / 1000, iFile));
-    nFiles += rec->Add("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21/*.root");
+    nFiles += rec->Add("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21_unbiassed/*.root");
 
     nEntries = rec->GetEntries();
     cout << "Got " << nFiles << " files" << endl;
     cout << "Got " << nEntries << " entries" << endl;
+
+    // Gamma weights
+    TFile * fWeights = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/UVPatch.root", "READ");
+    TH2F * hUVPatchProj = (TH2F *)fWeights->Get("hUVPatchProj");
+    TH3F * hUVPatch = (TH3F *)fWeights->Get("hUVPatch");
 
     // XECPMRunHeader
     TFile * file = rec->GetFile();
@@ -114,6 +122,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 
     // ROOT Histogams
     TH1F * hEPosReco = new TH1F("hEPosReco", "", 120, 40, 56);
+    TH1F * hEPosTRGw = new TH1F("hEPosTRGw", "", 120, 40, 56);
     TH1F * hEPosTRG  = new TH1F("hEPosTRG", "", 120, 40, 56);
     TH1F * hEPos     = new TH1F("hEPos", "", 120, 40, 56);
 
@@ -278,9 +287,11 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             // Quality checks
             bool goodPatchId = patchId >= 0 && patchId < 256;
             bool goodPixelId = pixelIdReco >= 0 && pixelIdReco < 512;
+            bool uAcc = ugamma > physSelect.fUGamma[0] && ugamma < physSelect.fUGamma[1];
+            bool vAcc = vgamma > physSelect.fVGamma[0] && vgamma < physSelect.fVGamma[1];
 
             // Filling histograms
-            if(goodPatchId && goodPixelId && isRecoInPostStamp)
+            if(goodPatchId && goodPixelId && isRecoInPostStamp && uAcc & vAcc)
             {
                 hEPos->Fill(epos * 1000);
                 if (vecpixelIdSPX.size() > 1)
@@ -343,6 +354,23 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
                         hPhiTRG->Fill(phipos);
                     }
                 }
+                
+                Int_t binx = hUVPatch->GetXaxis()->FindBin(ugamma);
+                Int_t biny = hUVPatch->GetYaxis()->FindBin(vgamma);
+                Double_t totalHits = hUVPatchProj->GetBinContent(hUVPatchProj->FindBin(ugamma, vgamma));
+
+                if(totalHits != 0)
+                {
+                    Double_t goodHits = 0;
+                    for(Int_t iPatch =0; iPatch < hUVPatch->GetZaxis()->GetNbins(); iPatch++)
+                    {
+                        Double_t hitsInPatch = hUVPatch->GetBinContent(binx, biny, iPatch+1);
+                        if (isOrTRG(iPatch, vecpixelIdTRG))
+                            goodHits += hitsInPatch;
+                    }
+                    if(goodHits != 0)
+                        hEPosTRGw->Fill(epos*1000, goodHits/totalHits);
+                }
             }
         }
     }
@@ -351,12 +379,13 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     // Plots
     if (isROOTFileOn)
     {
-        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_wide002.root";
+        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_nar003.root";
         cout << "Writing to " << outPath << endl;
         TFile outFile(outPath, "RECREATE");  
         hEPos->Write();
         hEPosReco->Write();
         hEPosTRG->Write(); 
+        hEPosTRGw->Write();
         
         // Target
         hTarget->Write();
@@ -415,17 +444,24 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     hEPosReco->Draw("SAME");
     hEPosTRG->SetLineColor(kBlue);
     hEPosTRG->Draw("SAME");
+    hEPosTRGw->SetLineColor(kRed);
+    hEPosTRGw->SetLineStyle(kDashed);
+    hEPosTRGw->Draw("SAME");
 
     cEff->cd(2); 
     TEfficiency *effReco = new TEfficiency(*hEPosReco, *hEPos);
     TEfficiency *effTRG  = new TEfficiency(*hEPosTRG, *hEPos);
+    TEfficiency *effTRGw  = new TEfficiency(*hEPosTRGw, *hEPos);
 
     effReco->SetTitle(";;Efficiency");
 
-    effReco->SetLineColor(kRed);
+    effReco->SetLineColor(kBlue);
     effReco->Draw();
-    effTRG->SetLineColor(kBlue);
+    effTRG->SetLineColor(kRed);
     effTRG->Draw("SAME");
+    effTRGw->SetLineColor(kRed);
+    effTRGw->SetLineStyle(kDashed);
+    effTRGw->Draw("SAME");
 
     // Target Plot
     TCanvas * cTarget = new TCanvas("cTarget", "cTarget", 1000, 500);

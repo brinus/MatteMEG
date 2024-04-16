@@ -14,25 +14,35 @@
 
 MMUtils::MMUtils()
 {
-    MMUtils::treeName_  = "rec";
-    MMUtils::recType_   = "";
-    MMUtils::chainPath_ = "/meg/data1/offline/run";
+    treeName_  = "rec";
+    recType_   = "";
+    chainPath_ = "/meg/data1/offline/run";
 }
 
 // Setter
 void MMUtils::SetTreeName(const std::string & treeName)
 {
-    MMUtils::treeName_ = treeName;
+    treeName_ = treeName;
 }
 
 void MMUtils::SetRecType(const std::string & recType)
 {
-    MMUtils::recType_ = recType;
+    if (recType == "unbiassed")
+        recType_ = "_unbiassed";
+    else if (recType == "open")
+        recType_ = "_open";
+    else if (recType == std::string(""))
+        recType_ = std::string("");
+    else 
+    {
+        std::cout << "Invalid recType! Setting \"\" as recType" << std::endl;
+        recType_ = ""; 
+    }
 }
 
 void MMUtils::SetChainPath(const std::string & chainPath)
 {
-    MMUtils::chainPath_ = chainPath;
+    chainPath_ = chainPath;
 }
 
 // Getter
@@ -43,28 +53,28 @@ const std::string & MMUtils::GetTreeName()
 
 const std::string & MMUtils::GetRecType()
 {
-    return MMUtils::recType_;
+    return recType_;
 }
 
 const std::string & MMUtils::GetChainPath()
 {
-    return MMUtils::chainPath_;
+    return chainPath_;
 }
 
 TChain * MMUtils::MakeTChain(const std::string & pathFiles)
 {
-    TChain * chain = new TChain(MMUtils::treeName_.c_str());
+    TChain * chain = new TChain(treeName_.c_str());
     chain->Add(pathFiles.c_str());
     return chain;
 }
 
 TChain * MMUtils::MakeTChain(const int & startRun, const int & nFiles)
 {
-    TChain * chain = new TChain(MMUtils::treeName_.c_str());
+    TChain * chain = new TChain(treeName_.c_str());
     char * fileName;
     for (int i = startRun; i < startRun + nFiles; ++i)
     {
-        fileName = Form("%s/%3dxxx/rec%6d.root", MMUtils::chainPath_.c_str(), i/1000, i);
+        fileName = Form("%s/%3dxxx/%s%6d.root", chainPath_.c_str(), i/1000, treeName_.c_str(), i);
         chain->Add(fileName);
     }
     return chain;
@@ -88,11 +98,11 @@ TChain * MMUtils::MakeTChainFromFile(const std::string & inFileName)
                 numbers.push_back(i);
     }
 
-    TChain * chain = new TChain(MMUtils::treeName_.c_str());
+    TChain * chain = new TChain(treeName_.c_str());
     char * fileName;
     for (auto run : numbers)
     {
-        fileName = Form("%s/%3dxxx/rec%6d.root", MMUtils::chainPath_.c_str(), run/1000, run);
+        fileName = Form("%s/%3dxxx/%s%6d%s.root", chainPath_.c_str(), run/1000, treeName_.c_str(), run, recType_.c_str());
         chain->Add(fileName);
     }
 
