@@ -24,11 +24,12 @@ void PatchDist()
 {
     // Initial setup
     Bool_t kPDF = false;
+    Bool_t kPDF2 = false;
     Bool_t kVerbose = false;
     MMUtils utils; 
     MEGPhysicsSelection physSelect;
 
-    utils.SetChainPath("/meg/data1/offline/processes/20240320");
+    //utils.SetChainPath("/meg/data1/offline/processes/20240320");
     physSelect.SetThresholds(EBeamPeriodID::kBeamPeriod2021, kTRUE);
 
     // TChain setup
@@ -81,10 +82,12 @@ void PatchDist()
     TH2F * hUVDist = new TH2F("", "", 100, uMin, uMax, 100, vMin, vMax);
     array<TH2F *, 256> arrDistTRGReco;
     array<TH2F *, 256> arrDistRecoTRG;
+    array<TGraph *, 256> arrWeigthMPPC;
     for (Int_t i = 0; i < 256; ++i)
     {
         arrDistTRGReco[i] = new TH2F(Form("trgPM%i", i), Form("trgPM%i", i), 100, -50, 50, 100, -50, 50);
         arrDistRecoTRG[i] = new TH2F(Form("recoPM%i", i), Form("recoPM%i", i), 100, -50, 50, 100, -50, 50);
+        arrWeigthMPPC[i] = new TGraph();
     }
     TGraph * gXECTRG = new TGraph();
     TGraph * gXECReco = new TGraph();
@@ -119,7 +122,7 @@ void PatchDist()
     rec->SetBranchAddress("trgxeconline.", &TRGXECOnlineRV);
 
     // GAMMA loop
-    for (Int_t iEntry = 0; iEntry < nEntries; ++iEntry)
+    for (Int_t iEntry = 0; iEntry < 100000; ++iEntry)
     {
         rec->GetEntry(iEntry);
         if (iEntry % 1000 == 0)
@@ -235,25 +238,112 @@ void PatchDist()
         cRecoTRG->Print("DistRecoTRG.pdf]");
     }
 
-    TCanvas * cUV = new TCanvas();
-    hUVDist->SetTitle(";u [cm];v [cm]");
-    hUVDist->Draw("COLZ");
+    TCanvas * cTemp = new TCanvas("cTemp", "cTemp", 1);
+    TGraph * gTemp = new TGraph();
+    gTemp->AddPoint(0, 0);
+    gTemp->GetXaxis()->SetLimits(uMin, uMax);
+    gTemp->GetHistogram()->SetMinimum(vMin);
+    gTemp->GetHistogram()->SetMaximum(vMax);
+    gTemp->SetMarkerStyle(29);
+    gTemp->Draw("AP");
+    TMarker * mark = new TMarker();
 
-    TCanvas * cPatch = new TCanvas("cP", "cP", 1000, 900);
-    cPatch->Divide(1, 2);
-    cPatch->cd(1);
-    hTRG->SetLineColor(kRed);
-    hTRGCut->SetMarkerColor(kRed);
-    hTRG->Draw();
-    hTRGCut->Draw("SAME E");
+    Int_t uBins = round(UPhys/2);
+    Int_t vBins = round(VPhys/2);
+    Double_t uBinLen = UPhys / uBins;
+    Double_t vBinLen = VPhys / vBins;
+    
+    cout << "uBins " << uBins << " vBins " << vBins << endl;
+    cout << "uBinLen " << uBinLen << " vBinLen " << vBinLen << endl;
+    Int_t uX = 18;
+    Int_t vX = 30;
+    Int_t idP = uX * uBins + vX;
+    Double_t x1B = physSelect.fUGamma[0] + (uX) * uBinLen;
+    Double_t y1B = physSelect.fVGamma[0] + (vX) * vBinLen;
+    Double_t x2B = physSelect.fUGamma[0] + (uX + 1) * uBinLen;
+    Double_t y2B = physSelect.fVGamma[0] + (vX + 1) * vBinLen;
 
-    cPatch->cd(2);
-    hReco->SetLineColor(kBlue);
-    hRecoCut->SetMarkerColor(kBlue);
-    hReco->Draw();
-    hRecoCut->Draw("SAME E");
+    Int_t totalHits = hUVPatchProj->GetBinContent(uX + 1, vX + 1);
+    Double_t goodU, goodV;
+    Int_t count;
+    
+    for (Int_t i = 0; i < 256; ++i)
+    {
+        goodU = 0;
+        goodV = 0;
+        count = 0;
+        
+        auto goodEntry = hUVPatch->GetBinContent(uX+1, vX+1, i + 1);
+        if (goodEntry)
+        {
+            cout << "i = " << i << " goodEntry = " << goodEntry << endl;
+            for (Int_t j = 0; j < 4096 && count < 16; ++j)
+            {
+                auto pmRH = (MEGXECPMRunHeader *)XECPMRunHeaderRA->At(j);
+                auto patch = (pmRH->GetDRSChipID() - 64) / 2; 
+                if (patch == i)
+                {
+                    mark = new TMarker(pmRH->GetUVWAt(0), pmRH->GetUVWAt(1), 21);
+                    mark->SetMarkerSize(1 * goodEntry / totalHits);
+                    mark->Draw("SAME");
+                    goodU += pmRH->GetUVWAt(0); 
+                    goodV += pmRH->GetUVWAt(1);
+                    count++;
+                } 
+            }          
+            goodU /= count;
+            goodV /= count;
+            //cout << goodU << " " << goodV << endl;
+            gTemp->GetXaxis()->SetLimits(uMin, uMax);
+            gTemp->GetHistogram()->SetMinimum(vMin);
+            gTemp->GetHistogram()->SetMaximum(vMax);
+            gTemp->AddPoint(goodU, goodV);
+        }   
+    }
+    gTemp->GetXaxis()->SetLimits(uMin, uMax);
+    gTemp->GetHistogram()->SetMinimum(vMin);
+    gTemp->GetHistogram()->SetMaximum(vMax);
+    
+    TBox * box = new TBox(x1B, y1B, x2B, y2B);
+    box->SetFillStyle(0);
+    box->SetLineColor(kRed);
+    box->Draw("SAME");
 
-    TFile * fOut = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/UVPatch.root", "RECREATE");
-    hUVPatchProj->Write();
-    hUVPatch->Write();
+    //if (kPDF2)
+    //{
+    //    Double_t u1, v1, u2, v2;
+    //    TBox * box = new TBox();
+    //    TCanvas * cWeigth = new TCanvas("cWeigth", "cWeigth", 1);
+    //    cWeigth->Print("Weigth.pdf[");
+    //    for (Int_t i = 0; i < 256; ++i)
+    //    {
+    //        box->PaintBox(u1,v1,u2,v2);
+    //        arr
+
+    //        cWeigth->Print("Weigth.pdf");
+    //    }
+    //    cWeigth->Print("Weigth.pdf]");
+    //}
+
+    //TCanvas * cUV = new TCanvas();
+    //hUVDist->SetTitle(";u [cm];v [cm]");
+    //hUVDist->Draw("COLZ");
+
+    //TCanvas * cPatch = new TCanvas("cP", "cP", 1000, 900);
+    //cPatch->Divide(1, 2);
+    //cPatch->cd(1);
+    //hTRG->SetLineColor(kRed);
+    //hTRGCut->SetMarkerColor(kRed);
+    //hTRG->Draw();
+    //hTRGCut->Draw("SAME E");
+
+    //cPatch->cd(2);
+    //hReco->SetLineColor(kBlue);
+    //hRecoCut->SetMarkerColor(kBlue);
+    //hReco->Draw();
+    //hRecoCut->Draw("SAME E");
+
+    //TFile * fOut = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/UVPatch.root", "RECREATE");
+    //hUVPatchProj->Write();
+    //hUVPatch->Write();
 }

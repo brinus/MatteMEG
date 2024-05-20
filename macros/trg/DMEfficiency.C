@@ -1,8 +1,8 @@
 // --- DMEfficiency.C ----------------------------------------------------------o
 //                                                                              |
-// Version:     0.3                                                             |
+// Version:     0.4                                                             |
 // Author:      Matteo Brini                                                    |
-// Date:        23/03/2024                                                      |
+// Date:        16/04/2024                                                      |
 // E-mail:      brinimatteo@gmail.com                                           |
 //                                                                              |
 // Description:                                                                 |
@@ -11,10 +11,16 @@
 //      the former is the entry of the DM table given by the offline            | 
 //      reconstruction of the pixel ID, the latter is the logic OR between all  |
 //      the TRG pixel ID in the wanted clock time (as function of runnumber).   |
+//      Effects from TRG position detection on LXe are also considered in this  |
+//      version.                                                                |
 //      The user can set two flags: isROOTFileOn and isPlotOn. The defalut      | 
 //      values are respectively 0 and 1.                                        |
 //                                                                              |
 //------------------------------------------------------------------------------o
+
+#include "../../include/MMUtils.h"
+R__ADD_LIBRARY_PATH(/meg/home/brini_m/Git/MatteMEG/lib)
+R__LOAD_LIBRARY(libMMUtils.so)
 
 Bool_t DMTable[256][512];
 
@@ -27,29 +33,21 @@ void loadDMTable(const char *);
 void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
+    MMUtils utils;
     const Bool_t kVerbose = false;
     MEGPhysicsSelection physSelect;
     //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
-    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
-    //loadDMTable("/meg/home/brini_m/Documents/run24/dm_fullMC_001.mem");
+    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+    //loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/dm_2Rad5_001.mem");
+    //loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full2R5.mem");
+    loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full1R0.mem");
 
     physSelect.SetThresholds(EBeamPeriodID::kBeamPeriod2021, kTRUE);
 
     // TChain
-    TChain * rec = new TChain("rec");
+    TChain * rec = utils.MakeTChain("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21/rec*.root");
 
-    Int_t runNum = 393500;
-    Int_t nInFiles = 20000;
-    Int_t endFile = 427120; 
-    Int_t nFiles = 0;
-    Int_t nEntries = 0;
-
-    //for (Int_t iFile = runNum; iFile < runNum + nInFiles; ++iFile)
-    //    nFiles += rec->Add(Form("/meg/data1/offline/run/%03dxxx/rec%06d_unbiassed.root", iFile / 1000, iFile));
-    nFiles += rec->Add("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21_unbiassed/*.root");
-
-    nEntries = rec->GetEntries();
-    cout << "Got " << nFiles << " files" << endl;
+    Long_t nEntries = rec->GetEntries();
     cout << "Got " << nEntries << " entries" << endl;
 
     // Gamma weights
@@ -221,7 +219,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
             bool ePosCutFine = epos < 0.05265 || epos > 0.05295;
             bool posXECAcceptance = positron->GetXECAcceptance();
             bool posNGoodhits = positron->Getngoodhits() > 45;
-            bool isInRadius = xpos * xpos + ypos * ypos < 4;
+            bool isInRadius = xpos * xpos + ypos * ypos < 2.5 * 2.5;
 
             if (ePosCut || !posXECAcceptance)
                 continue;
@@ -379,7 +377,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     // Plots
     if (isROOTFileOn)
     {
-        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/distill_dm21_nar003.root";
+        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_full1R0.root";
         cout << "Writing to " << outPath << endl;
         TFile outFile(outPath, "RECREATE");  
         hEPos->Write();

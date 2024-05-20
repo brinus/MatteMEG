@@ -58,11 +58,12 @@ void readDMEff()
     gStyle->SetStatW(0.2); // Set the width of the statbox
     gStyle->SetStatH(0.15); // Set the height of the statbox
 
-    TFile * DMFile = new TFile("outfiles/distill_dm21_nar001.root", "READ");
+    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_full1R0troot", "READ");
     
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");
     TH1F * hEPosTRG = (TH1F *)DMFile->Get("hEPosTRG");
+    TH1F * hEPosTRGw = (TH1F *)DMFile->Get("hEPosTRGw");
 
     TH2F * hTarget = (TH2F *)DMFile->Get("hTarget");
     TH2F * hTargetReco = (TH2F *)DMFile->Get("hTargetReco");
@@ -112,15 +113,20 @@ void readDMEff()
     hEPosReco->Draw("SAME");
     hEPosTRG->SetLineColor(kRed);
     hEPosTRG->Draw("SAME");
+    hEPosTRGw->SetLineColor(kRed);
+    hEPosTRGw->SetLineStyle(2);
+    hEPosTRGw->Draw("SAME");
 
     legEff->AddEntry(hEPos, "e^{+}", "L");
     legEff->AddEntry(hEPosReco, "e^{+}_{reco}", "L");
     legEff->AddEntry(hEPosTRG, "e^{+}_{TRG}", "L");
+    legEff->AddEntry(hEPosTRGw, "e^{+}_{TRGw}", "L");
     legEff->Draw();
 
     cEff->cd(2); 
     TEfficiency *effReco = new TEfficiency(*hEPosReco, *hEPos);
     TEfficiency *effTRG  = new TEfficiency(*hEPosTRG, *hEPos);
+    TEfficiency *effTRGw  = new TEfficiency(*hEPosTRGw, *hEPos);
 
     effReco->SetTitle(";;Efficiency");
 
@@ -128,6 +134,9 @@ void readDMEff()
     effReco->Draw();
     effTRG->SetLineColor(kRed);
     effTRG->Draw("SAME");
+    effTRGw->SetLineColor(kRed);
+    effTRGw->SetLineStyle(2);
+    effTRGw->Draw("SAME");
 
     // Target Plot
     TCanvas * cTarget = new TCanvas("cTarget", "cTarget", 1000, 500);
