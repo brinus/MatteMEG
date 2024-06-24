@@ -58,12 +58,13 @@ void readDMEff()
     gStyle->SetStatW(0.2); // Set the width of the statbox
     gStyle->SetStatH(0.15); // Set the height of the statbox
 
-    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_full1R0troot", "READ");
+    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/dm22_full1R0sm_prio.root", "READ");
     
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");
     TH1F * hEPosTRG = (TH1F *)DMFile->Get("hEPosTRG");
     TH1F * hEPosTRGw = (TH1F *)DMFile->Get("hEPosTRGw");
+    TH1F * hEPosPrio = (TH1F *)DMFile->Get("hEPosPrio");
 
     TH2F * hTarget = (TH2F *)DMFile->Get("hTarget");
     TH2F * hTargetReco = (TH2F *)DMFile->Get("hTargetReco");
@@ -116,17 +117,27 @@ void readDMEff()
     hEPosTRGw->SetLineColor(kRed);
     hEPosTRGw->SetLineStyle(2);
     hEPosTRGw->Draw("SAME");
+    if (hEPosPrio)
+    {
+        hEPosPrio->SetLineColor(kBlue);
+        hEPosPrio->Draw("SAME");
+    }
 
     legEff->AddEntry(hEPos, "e^{+}", "L");
     legEff->AddEntry(hEPosReco, "e^{+}_{reco}", "L");
     legEff->AddEntry(hEPosTRG, "e^{+}_{TRG}", "L");
     legEff->AddEntry(hEPosTRGw, "e^{+}_{TRGw}", "L");
+    if (hEPosPrio)
+        legEff->AddEntry(hEPosPrio, "e^{+}_{Prio}", "L");
     legEff->Draw();
 
     cEff->cd(2); 
     TEfficiency *effReco = new TEfficiency(*hEPosReco, *hEPos);
     TEfficiency *effTRG  = new TEfficiency(*hEPosTRG, *hEPos);
     TEfficiency *effTRGw  = new TEfficiency(*hEPosTRGw, *hEPos);
+    TEfficiency * effPrio = 0;
+    if (hEPosPrio)
+        effPrio  = new TEfficiency(*hEPosPrio, *hEPos);
 
     effReco->SetTitle(";;Efficiency");
 
@@ -137,6 +148,11 @@ void readDMEff()
     effTRGw->SetLineColor(kRed);
     effTRGw->SetLineStyle(2);
     effTRGw->Draw("SAME");
+    if (hEPosPrio)
+    {
+        effPrio->SetLineColor(kBlue);
+        effPrio->Draw("SAME");
+    }
 
     // Target Plot
     TCanvas * cTarget = new TCanvas("cTarget", "cTarget", 1000, 500);
@@ -329,4 +345,12 @@ void readDMEff()
     effPhiTRG->SetLineWidth(2);
     effPhiReco->Draw();
     effPhiTRG->Draw("SAME");
+
+    // Finding the region in ZTheta for the cut
+    TF1 * func1 = new TF1("f1", "pol1", -20, 20);
+    func1->SetParameters(95, 1);
+    func1->Draw("SAME");
+    TF1 * func2 = new TF1("f2", "pol1", -20, 20);
+    func2->SetParameters(89, 1);
+    func2->Draw("SAME");
 }
