@@ -7,6 +7,7 @@
 //                                                                              |
 // Description:                                                                 |
 //      Macro to study direction match efficiency with photon corrections.      |
+//      This script produces the output UVDist.root.                            |
 //                                                                              |
 //------------------------------------------------------------------------------o
 
@@ -30,8 +31,6 @@ void DMGamma()
     //utils.SetRecType("unbiassed");
     
     // TChain
-    //TChain * rec = utils.MakeTChain("/meg/home/brini_m/Git/offline/analyzer/distilled/dm21/rec411999.root");
-    //TChain * rec = utils.MakeTChain(383500, 100);
     TChain * rec = utils.MakeTChainFromFile("/meg/home/brini_m/Documents/runlistCW.txt");
 
     Long_t nEntries = rec->GetEntries();
@@ -78,7 +77,9 @@ void DMGamma()
     }
  
     // Histograms && Plots
-    TH1F * hUVDist = new TH1F("hUVDist", "hUVDist", 100, 0, 0);
+    TH1F * hUVDist = new TH1F("hUVDist", "hUVDist", 100, 0, 18);
+    TH1F * hUDelta = new TH1F("hUDelta", "hUDelta", 100, -18, 18);
+    TH1F * hVDelta = new TH1F("hVDelta", "hVDelta", 100, -18, 18);
     TH2F * hTRGReco = new TH2F("hTRGReco", "hTRGReco", 256, -0.5, 255.5, 256, -0.5, 255.5);
     TH2F * hTRGXECFit = new TH2F("hTRGXECFit", "hTRGXECFit", 256, -0.5, 255.5, 256, -0.5, 255.5);
     TH2F * hUVDistW = new TH2F("hUVDistW", "hUVDistW", 100, 0, 0, 100, 0, 0);
@@ -161,8 +162,8 @@ void DMGamma()
             if (recoUGamma < uMin || recoUGamma > uMax) continue;
             if (recoVGamma < vMin || recoVGamma > vMax) continue;
 
-            auto uDist = TMath::Abs(uvTRG.first - recoUGamma);
-            auto vDist = TMath::Abs(uvTRG.second - recoVGamma);
+            auto uDist = uvTRG.first - recoUGamma;
+            auto vDist = uvTRG.second - recoVGamma;
             auto UVDist = TMath::Sqrt(uDist * uDist + vDist * vDist); // Distance UV
 
             // Get PatchId from RecData
@@ -194,6 +195,8 @@ void DMGamma()
 
             hTRGReco->Fill(trgPatchId, recoPatchId);
             hUVDist->Fill(UVDist);
+            hUDelta->Fill(uDist);
+            hVDelta->Fill(vDist);
             hUVDistW->Fill(UVDist, recoWGamma);
             hTimeStamp->Fill(tdcPeakTime, timeReco);
         }
@@ -213,5 +216,10 @@ void DMGamma()
 
     TCanvas * c5 = new TCanvas("c5", "c5", 1);
     hUVDistW->Draw("COLZ");
+
+    TFile * outfile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/UVDist.root", "RECREATE");
+    hUDelta->Write();
+    hVDelta->Write();
+    hUVDist->Write();
 
 }

@@ -21,7 +21,9 @@ void TileDist()
 {
     Bool_t DMTable0[512][256];
     Bool_t DMTable1[512][256];
-    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem", DMTable0);
+    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem", DMTable0);
+    //loadDMTable("/meg/home/francesconi_m/git/offline/analyzer/test.mem", DMTable1);
+    loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full1R0.mem", DMTable0);
     loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full2R5.mem", DMTable1);
     cout << "DMTables loaded" << endl;
 
@@ -51,28 +53,48 @@ void TileDist()
     }
     auto map_backup = pixelSet;
 
-    // DMTable
-    cSPX->Print("TileDMCompare2R5.pdf[");
-    for (Int_t patch = 0; patch < 256; ++patch)
+
+    int test = 71;
+    if (test%2 == 0)
     {
-        pixelSet = map_backup;
-        for (Int_t iPixel = 0; iPixel < 512; ++iPixel)
-        {
-            if (DMTable0[iPixel][patch])
-                pixelSet[iPixel][0] = kRed;
-
-            if (DMTable1[iPixel][patch])
-                pixelSet[iPixel].push_back(kGreen);
-        }
-
-        fGeometry->DrawZPhi2DView(pixelSet, "", 1, kTRUE);
-        
-        cSPX->Print("TileDMCompare2R5.pdf");
-
-        pad->Clear();
-
+        pixelSet[test].push_back(kGreen);
+        pixelSet[test+1].push_back(kOrange);
+        pixelSet[test+31].push_back(kOrange);
+        pixelSet[test+16].push_back(kOrange);
+        pixelSet[test+17].push_back(kOrange);
     }
-    cSPX->Print("TileDMCompare2R5.pdf]");
+    if (test%2 == 1)
+    {
+        pixelSet[test].push_back(kGreen);
+        pixelSet[test+1].push_back(kOrange);
+        pixelSet[test+3].push_back(kOrange);
+        pixelSet[test+16].push_back(kOrange);
+        pixelSet[test+15].push_back(kOrange);
+    }
+    fGeometry->DrawZPhi2DView(pixelSet, "", 1, kTRUE);
+
+    // DMTable
+    //cSPX->Print("1R0vs2R5.pdf[");
+    //for (Int_t patch = 0; patch < 256; ++patch)
+    //{
+    //    pixelSet = map_backup;
+    //    for (Int_t iPixel = 0; iPixel < 512; ++iPixel)
+    //    {
+    //        if (DMTable0[iPixel][patch])
+    //            pixelSet[iPixel][0] = kRed;
+
+    //        if (DMTable1[iPixel][patch])
+    //            pixelSet[iPixel].push_back(kGreen);
+    //    }
+
+    //    fGeometry->DrawZPhi2DView(pixelSet, "", 1, kTRUE);
+    //    
+    //    cSPX->Print("1R0vs2R5.pdf");
+
+    //    pad->Clear();
+
+    //}
+    //cSPX->Print("1R0vs2R5.pdf]");
 }
 
 void loadDMTable(const char* path, Bool_t (& DMTable)[512][256])

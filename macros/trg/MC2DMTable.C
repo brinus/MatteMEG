@@ -13,7 +13,7 @@
 #include "TMath.h"
 
 #include "../../include/MMUtils.h"
-    R__ADD_LIBRARY_PATH(/meg/home/brini_m/Git/MatteMEG/lib)
+R__ADD_LIBRARY_PATH(/meg/home/brini_m/Git/MatteMEG/lib)
 R__LOAD_LIBRARY(libMMUtils.so)
 
 int getPatch(int pmID)
@@ -48,10 +48,10 @@ void MC2DMTable()
     cout << "Got " << nEntries << " entries" << endl;
 
     // Setup Branches
-    MEGMCSPXEvent  * simMCSPXEvent = 0;
-    MEGMCKineEvent * simMCKineEvent = 0;
-    TClonesArray   * simMCXECPMEvent = 0;
-    TClonesArray   * simMCSPXPPDEvent = 0;
+    MEGMCSPXEvent   * MCSPXEventRV = 0;
+    MEGMCKineEvent  * MCKineEventRV = 0;
+    TClonesArray    * MCXECPMEventRA = 0;
+    TClonesArray    * MCSPXPPDEventRA = 0;
 
     sim->SetBranchStatus("*", 0);
     sim->SetBranchStatus("mcspx.*", 1);
@@ -59,10 +59,10 @@ void MC2DMTable()
     sim->SetBranchStatus("mcxecpm*", 1);
     sim->SetBranchStatus("mcspxppd*", 1);
 
-    sim->SetBranchAddress("mcspx.", &simMCSPXEvent);
-    sim->SetBranchAddress("mckine.", &simMCKineEvent);
-    sim->SetBranchAddress("mcxecpm", &simMCXECPMEvent);
-    sim->SetBranchAddress("mcspxppd", &simMCSPXPPDEvent);
+    sim->SetBranchAddress("mcspx.", &MCSPXEventRV);
+    sim->SetBranchAddress("mckine.", &MCKineEventRV);
+    sim->SetBranchAddress("mcxecpm", &MCXECPMEventRA);
+    sim->SetBranchAddress("mcspxppd", &MCSPXPPDEventRA);
 
     // Constants
     static const Int_t kMaxNXePM = 10000;
@@ -73,7 +73,7 @@ void MC2DMTable()
     Int_t pmMaxIndex = -1000, pixelIDFirst = -1000, pixelID = -1000, nPixel = -1000;
     Double_t chargeMax = -1000., chargePM = -1000.;
     Double_t tSpxMin = 1.e+9, tSpx = 1.e+9;
-    Double_t cutRadius = 1.75; // cm, radius to cut beamspot on target in x-y plane
+    Double_t cutRadius = 2.25; // cm, radius to cut beamspot on target in x-y plane
 
     int hit[256][512];  // 256 WDB * 512 pixelID
     int nhits[256];     // 256 WDB
@@ -93,14 +93,14 @@ void MC2DMTable()
             cout << iEntry << endl;
 
         // Cut on beamspot
-        auto nvtx = simMCKineEvent->Getnvtx();
+        auto nvtx = MCKineEventRV->Getnvtx();
         if (nvtx != 2) continue;
 
         Bool_t goodRadius = 0;
         for (Int_t i = 0; i < nvtx; ++i)
         {
-            auto xvtx = simMCKineEvent->GetxvtxAt(i);
-            auto yvtx = simMCKineEvent->GetyvtxAt(i);
+            auto xvtx = MCKineEventRV->GetxvtxAt(i);
+            auto yvtx = MCKineEventRV->GetyvtxAt(i);
 
             if ((xvtx * xvtx) + (yvtx * yvtx) < (cutRadius * cutRadius))
                 goodRadius = 1;
@@ -112,7 +112,7 @@ void MC2DMTable()
         pmMaxIndex = -1000;
         for (Int_t iPM = 0; iPM < kNPMInner; iPM++)
         {
-            chargePM = ((MEGMCXECPMEvent*)(simMCXECPMEvent->At(iPM)))->Getnphe();
+            chargePM = ((MEGMCXECPMEvent*)(MCXECPMEventRA->At(iPM)))->Getnphe();
             if (chargePM > chargeMax)
             {
                 chargeMax = chargePM;
@@ -121,12 +121,12 @@ void MC2DMTable()
         }   
 
         // SPX Loop
-        nPixel = simMCSPXEvent->Getnpixel();
+        nPixel = MCSPXEventRV->Getnpixel();
         pixelIDFirst = -1000;  
         tSpxMin = 1.e+9;       
         for (Int_t iPixel = 0; iPixel < nPixel; iPixel++) {
-            tSpx = ((MEGMCSPXPPDEvent*)(simMCSPXPPDEvent->At(iPixel)))->Gettpeppd();
-            pixelID = ((MEGMCSPXPPDEvent*)(simMCSPXPPDEvent->At(iPixel)))->GetpixelID();
+            tSpx = ((MEGMCSPXPPDEvent*)(MCSPXPPDEventRA->At(iPixel)))->Gettpeppd();
+            pixelID = ((MEGMCSPXPPDEvent*)(MCSPXPPDEventRA->At(iPixel)))->GetpixelID();
             if (tSpx < tSpxMin) {
                 tSpxMin = tSpx;
                 pixelIDFirst = pixelID;
@@ -144,9 +144,9 @@ void MC2DMTable()
             }
         }   
     }
-    
+
     std::ofstream file;
-    file.open("/meg/home/brini_m/Git/MatteMEG/outfiles/full1R75.txt");
+    file.open("/meg/home/brini_m/Git/MatteMEG/outfiles/full2R25.txt");
     for(Int_t i = 0; i < 256; i++)
     {
         cout << "Patch ID: " << setw(3) << i << ", nhits: " << setw(6) << nhits[i];

@@ -50,15 +50,16 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 {
     // Initial setup
     MMUtils utils;
+
     const Bool_t kVerbose = false;
     MEGPhysicsSelection physSelect;
-    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
     //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
     //loadDMTable("/meg/home/francesconi_m/git/offline/analyzer/dmdummy.mem");
-    loadDMTable("/meg/home/francesconi_m/git/offline/analyzer/test.mem");
+    //loadDMTable("/meg/home/francesconi_m/git/offline/analyzer/test.mem");
     //loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full1R0sm.mem");
 
-    physSelect.SetThresholds(EBeamPeriodID::kBeamPeriod2022, kTRUE);
+    physSelect.SetThresholds(EBeamPeriodID::kBeamPeriod2021, kTRUE);
 
     std::map<Int_t, Int_t> mpriority;
     for (Int_t idx = 0; idx < 128; ++idx)

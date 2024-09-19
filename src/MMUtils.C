@@ -74,7 +74,7 @@ TChain * MMUtils::MakeTChain(const int & startRun, const int & nFiles)
     char * fileName;
     for (int i = startRun; i < startRun + nFiles; ++i)
     {
-        fileName = Form("%s/%3dxxx/%s%6d.root", chainPath_.c_str(), i/1000, treeName_.c_str(), i);
+        fileName = Form("%s/%3dxxx/%s%6d%s.root", chainPath_.c_str(), i/1000, treeName_.c_str(), i, recType_.c_str());
         chain->Add(fileName);
     }
     return chain;
