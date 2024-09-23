@@ -58,7 +58,7 @@ void readDMEff()
     gStyle->SetStatW(0.2); // Set the width of the statbox
     gStyle->SetStatH(0.15); // Set the height of the statbox
 
-    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_narrow_unb.root", "READ");
+    TFile * DMFile = new TFile("/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_wide_prio.root", "READ");
     
     TH1F * hEPos = (TH1F *)DMFile->Get("hEPos");
     TH1F * hEPosReco = (TH1F *)DMFile->Get("hEPosReco");

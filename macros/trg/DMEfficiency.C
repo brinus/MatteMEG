@@ -53,11 +53,11 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
 
     const Bool_t kVerbose = false;
     MEGPhysicsSelection physSelect;
-    loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
+    //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmnarrow.mem");
     //loadDMTable("/meg/home/francesconi_m/git/online/scripts/trigger/dmwide.mem");
     //loadDMTable("/meg/home/francesconi_m/git/offline/analyzer/dmdummy.mem");
     //loadDMTable("/meg/home/francesconi_m/git/offline/analyzer/test.mem");
-    //loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full1R0sm.mem");
+    loadDMTable("/meg/home/brini_m/Git/MatteMEG/outfiles/full2R5sm.mem");
 
     physSelect.SetThresholds(EBeamPeriodID::kBeamPeriod2021, kTRUE);
 
@@ -419,7 +419,7 @@ void DMEfficiency(Bool_t isROOTFileOn = false, Bool_t isPlotOn = true)
     // Plots
     if (isROOTFileOn)
     {
-        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_test_prio.root";
+        const Char_t * outPath = "/meg/home/brini_m/Git/MatteMEG/outfiles/dm21_full2R5sm_prio.root";
         cout << "Writing to " << outPath << endl;
         TFile outFile(outPath, "RECREATE");  
         hEPos->Write();
